@@ -10,6 +10,7 @@ def main(_in: Path, out: Path):
     with _in.open("rt") as f:
         netlist = json.load(f)
     with out.open("wt") as f:
+        f.write("`default_nettype none\n\n")
         f.write(f"module {netlist['name']}_recovered_verilog (\n")
         f.write(
             ",\n".join(

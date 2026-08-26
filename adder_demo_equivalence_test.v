@@ -1,3 +1,5 @@
+`default_nettype none
+
 module adder_demo_equivalence_test (
     input  wire clk,
     input  wire rst_n,
