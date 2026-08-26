@@ -48,3 +48,18 @@
     * On the warmup's netlist, there are 81 unnamed nets, this corresponds to the 78 internal nets from 01_netlist.v plus the 3 from the logo. Looks good.
 7. One last observation - the SKY130 PDK doesn't seem to include a D-FF with an enable pin (like it's common on FPGAs), so I think I will need to special case the combination of MUX + DFF
 
+# Day 3
+
+1. Some misc observations
+    * The fanout on rst_n is way too high, I it goes to every resettable DFF
+    * There is way fewer decoupling caps than on my Tiny Tapout 03 design, also, there is no fill
+        * Definitely a different flow, maybe not even manufacturable? I can't actually tell.
+    * The pinout and the warmup "puzzle" suggests lots of shift registers that are enabled by the en pin, but I don't think that's the case - not enough MUXes for that. There are probably some though. Brings into question the DFF + MUX = DFFE transformation though.
+    * In the example waveform, it only outputs uppercase ASCII, but O[6:7] have drivers - presumably it outputs other stuff too? Are there Easter Eggs here?
+2. Got netlist out of KLayout into custom format
+    * Checked it in because I want the verilog to be reproducible and the extraction order and net IDs from KLayout might not be stable
+3. Converted netlist to plain Verilog, and successfully simulated adder_demo against its source
+    * Took the sky130 PDK sim files from my TT03 working tree
+
+# Register of Easter Eggs
+* Jane Street logo on met2 (I suppose it's an easter egg, since it wasn't in the PNG, but not exactly a major achievement to find it)
