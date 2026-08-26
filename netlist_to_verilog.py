@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
 
-from pathlib import Path
-from argparse import ArgumentParser
 import json
+from argparse import ArgumentParser
+from pathlib import Path
 
 
 def main(_in: Path, out: Path):
