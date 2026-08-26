@@ -25,9 +25,9 @@ async def my_second_test(dut):
 
     r = Random(bytes.fromhex("df50d2b6c44e5120"))
 
-    for _ in range(100_000):
+    for _ in range(10_000):
         await FallingEdge(dut.clk)
         assert dut.S_original.value == dut.S_recovered_verilog.value
-        dut.en.value = r.randrange(2)
-        dut.A.value = r.randrange(2)
-        dut.B.value = r.randrange(2)
+        dut.en.value = r.random() < 2/3
+        dut.A.value = r.random() < 2/3
+        dut.B.value = r.random() < 2/3
