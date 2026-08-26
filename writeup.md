@@ -60,6 +60,9 @@
     * Checked it in because I want the verilog to be reproducible and the extraction order and net IDs from KLayout might not be stable
 3. Converted netlist to plain Verilog, and successfully simulated adder_demo against its source
     * Took the sky130 PDK sim files from my TT03 working tree
+4. I have simulated the recovered puzzle netlist.
+    * I couldn't be bothered to read the VCD, so I simulated some random bits
+    * I thought it responds when enable falls, but it turns out it matters that it takes exactly 121 bits. That *must* be a clue. It must.
 
 # Register of Easter Eggs
 * Jane Street logo on met2 (I suppose it's an easter egg, since it wasn't in the PNG, but not exactly a major achievement to find it)

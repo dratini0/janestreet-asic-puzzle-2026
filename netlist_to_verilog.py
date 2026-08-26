@@ -15,8 +15,10 @@ def main(_in: Path, out: Path):
         f.write(
             ",\n".join(
                 (
-                    f"  output {net}"
-                    if net.startswith("O[") or net in {"S", "success"}
+                    f"  output \\{net} "
+                    if net.startswith("O[")
+                    else f"  output {net}"
+                    if net in {"S", "success"}
                     else f"  input {net}"
                 )
                 for net in netlist["pins"]
@@ -28,11 +30,21 @@ def main(_in: Path, out: Path):
         f.write("\n")
 
         for i, gate in enumerate(netlist["gates"]):
-            f.write(f"  {gate["typename"]} gate_{i} (\n")
-            f.write(",\n".join(f"    .{pin}({net})" for pin, net in gate["connections"].items()))
+            f.write(f"  {gate['typename']} gate_{i} (\n")
+            f.write(
+                ",\n".join(
+                    (
+                        f"    .{pin}(\\{net} )"
+                        if net.startswith("O[")
+                        else f"    .{pin}({net})"
+                    )
+                    for pin, net in gate["connections"].items()
+                )
+            )
             f.write("\n  );\n\n")
 
         f.write("endmodule\n")
+
 
 if __name__ == "__main__":
     parser = ArgumentParser()
