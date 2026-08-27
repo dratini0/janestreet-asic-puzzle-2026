@@ -64,5 +64,15 @@
     * I couldn't be bothered to read the VCD, so I simulated some random bits
     * I thought it responds when enable falls, but it turns out it matters that it takes exactly 121 bits. That *must* be a clue. It must.
 
+# Day 4
+
+1. What is the deal with all the conb blocks whose lo outputs are going to a22o’s and similar?
+    * That makes the other half of that and useless.
+    * It also seems to go to and gates when it's the high output
+    * Logic optimization will prune that, maybe? Or do I just change that to HI/LO and watch it do something even weirder? Let’s put a pin in that for now.
+    * Or is this one of those things added so that we can do a simple metal layer change to fix something? Maybe to prevent a logic hazard?
+2. Likewise, there is a buffer - why? I don't think I will optimize it out, I'm curious.
+3. Ooops, I left the diodes in. Easy enough to fix.
+
 # Register of Easter Eggs
 * Jane Street logo on met2 (I suppose it's an easter egg, since it wasn't in the PNG, but not exactly a major achievement to find it)

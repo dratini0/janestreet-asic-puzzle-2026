@@ -5,7 +5,7 @@ import json
 import pya
 
 IGNORED_NETS = {"VPWR", "VGND"}
-IGNORED_GATES = {"sky130_fd_sc_hd__tapvpwrvgnd_1", "sky130_fd_sc_hd__decap_3"}
+IGNORED_GATES = {"sky130_fd_sc_hd__tapvpwrvgnd_1", "sky130_fd_sc_hd__decap_3", "sky130_fd_sc_hd__diode_2"}
 
 
 def name_net(net: pya.Net) -> str:

@@ -1265,14 +1265,6 @@
       }
     },
     {
-      "typename": "sky130_fd_sc_hd__diode_2",
-      "x": 171.58,
-      "y": 267.92,
-      "connections": {
-        "DIODE": "net_719"
-      }
-    },
-    {
       "typename": "sky130_fd_sc_hd__o21ba_2",
       "x": 162.38,
       "y": 251.60000000000002,
@@ -1307,22 +1299,6 @@
       }
     },
     {
-      "typename": "sky130_fd_sc_hd__diode_2",
-      "x": 168.36,
-      "y": 278.8,
-      "connections": {
-        "DIODE": "net_343"
-      }
-    },
-    {
-      "typename": "sky130_fd_sc_hd__diode_2",
-      "x": 169.28,
-      "y": 286.96,
-      "connections": {
-        "DIODE": "net_343"
-      }
-    },
-    {
       "typename": "sky130_fd_sc_hd__nand2b_2",
       "x": 170.42999999999998,
       "y": 281.52,
@@ -1330,14 +1306,6 @@
         "B": "net_3136",
         "Y": "net_4236",
         "A_N": "net_3771"
-      }
-    },
-    {
-      "typename": "sky130_fd_sc_hd__diode_2",
-      "x": 169.28,
-      "y": 276.08,
-      "connections": {
-        "DIODE": "net_343"
       }
     },
     {
@@ -1350,22 +1318,6 @@
         "C": "net_343",
         "B": "net_3136",
         "A_N": "net_3771"
-      }
-    },
-    {
-      "typename": "sky130_fd_sc_hd__diode_2",
-      "x": 170.66000000000003,
-      "y": 270.64,
-      "connections": {
-        "DIODE": "net_719"
-      }
-    },
-    {
-      "typename": "sky130_fd_sc_hd__diode_2",
-      "x": 169.28,
-      "y": 270.64,
-      "connections": {
-        "DIODE": "net_343"
       }
     },
     {
@@ -1408,14 +1360,6 @@
         "B1": "net_1365",
         "A1": "net_1363",
         "A2": "net_1351"
-      }
-    },
-    {
-      "typename": "sky130_fd_sc_hd__diode_2",
-      "x": 171.58,
-      "y": 265.2,
-      "connections": {
-        "DIODE": "net_719"
       }
     },
     {
@@ -1494,14 +1438,6 @@
         "A1": "net_1505",
         "C1": "net_3771",
         "B1": "net_3870"
-      }
-    },
-    {
-      "typename": "sky130_fd_sc_hd__diode_2",
-      "x": 170.66000000000003,
-      "y": 235.28000000000003,
-      "connections": {
-        "DIODE": "net_2240"
       }
     },
     {
@@ -4554,14 +4490,6 @@
         "Y": "net_2439",
         "A": "net_1526",
         "B": "net_2409"
-      }
-    },
-    {
-      "typename": "sky130_fd_sc_hd__diode_2",
-      "x": 30.360000000000003,
-      "y": 197.20000000000002,
-      "connections": {
-        "DIODE": "enable"
       }
     },
     {
@@ -7820,14 +7748,6 @@
         "X": "net_967",
         "A1": "I",
         "B1": "net_1032"
-      }
-    },
-    {
-      "typename": "sky130_fd_sc_hd__diode_2",
-      "x": 122.36000000000001,
-      "y": 61.2,
-      "connections": {
-        "DIODE": "net_736"
       }
     },
     {
