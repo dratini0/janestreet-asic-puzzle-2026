@@ -55,7 +55,7 @@
     * There is way fewer decoupling caps than on my Tiny Tapout 03 design, also, there is no fill
         * Definitely a different flow, maybe not even manufacturable? I can't actually tell.
     * The pinout and the warmup "puzzle" suggests lots of shift registers that are enabled by the en pin, but I don't think that's the case - not enough MUXes for that. There are probably some though. Brings into question the DFF + MUX = DFFE transformation though.
-    * In the example waveform, it only outputs uppercase ASCII, but O[6:7] have drivers - presumably it outputs other stuff too? Are there Easter Eggs here?
+    * In the example waveform, it only outputs uppercase ASCII, but O[7] has a driver - presumably it outputs other stuff too? Are there Easter Eggs here?
 2. Got netlist out of KLayout into custom format
     * Checked it in because I want the verilog to be reproducible and the extraction order and net IDs from KLayout might not be stable
 3. Converted netlist to plain Verilog, and successfully simulated adder_demo against its source
@@ -73,6 +73,15 @@
     * Or is this one of those things added so that we can do a simple metal layer change to fix something? Maybe to prevent a logic hazard?
 2. Likewise, there is a buffer - why? I don't think I will optimize it out, I'm curious.
 3. Ooops, I left the diodes in. Easy enough to fix.
+4. There are 15 sky130_fd_sc_hd__clkbuf_4's in the design, with their outputs completely unconnected. I checked on the GDS. They are unused. Why? Is that just an obstacle for us? I'm not sure I believe that. Is it some odd analog semiconductor thing I don't understand? Or just some process artifact? Or is there something more profound to that?
+    * Whatever, I'm pruning all of it, I just can't see any possibility of anything interesting being in there.
+5. Net 1447 (in my notation) is completely undriven. And it seems to check out on the GDS too. Why??? There is no way it passed any DRC. It has to be an obstacle, at this point, but if so, why is it in the output generator?!
+    * Notably, the simulation works fine with it being undriven? Or is that only because I haven't solved it?
+    * This is crazy. And I'm not sure Amaranth can express 4-value Verilog nets...
+    * Actually, it could also be a missing via to ... The output of one of the gates it's an input to? Probably not.
+    * It does cause x-propagation, but: only when the output generator is outputting a space or a null. It never reaches the output. Hmm. I'm very worried about this.
+    * I will just add a constant 0 to it, and hope for the best! That's so weird.
+    * Actually, one better, I will turn it into an input. Nasty hack, but it works, because while Amaranth can't model z's, the verilog it generates will handle it just fine... I think.
 
 # Register of Easter Eggs
 * Jane Street logo on met2 (I suppose it's an easter egg, since it wasn't in the PNG, but not exactly a major achievement to find it)
