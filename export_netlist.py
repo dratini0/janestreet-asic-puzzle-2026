@@ -52,6 +52,7 @@ for gate in top_circuit.each_subcircuit():
     }
     gates.append(
         {
+            "id": gate.id(),
             "typename": typename,
             "x": location.x,
             "y": location.y,

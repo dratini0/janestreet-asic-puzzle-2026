@@ -13,6 +13,7 @@ OUTPUT_PINS = {"X", "Y", "Q", "HI", "LO"}
 
 
 class JsonGate(TypedDict):
+    id: int
     typename: str
     x: float
     y: float
@@ -91,7 +92,7 @@ def main(_in: Path, out: Path):
     ]
 
     gates: dict[str, Gate] = {
-        f"{gate['typename']}_{round(gate['x'] * 100)}_{round(gate['y'] * 100)}": Gate(
+        f"{gate['typename']}_id_{gate["id"]}": Gate(
             typename=gate["typename"],
             x=gate["x"],
             y=gate["y"],

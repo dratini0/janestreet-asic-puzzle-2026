@@ -29,8 +29,8 @@ def main(_in: Path, out: Path):
             f.write(f"  wire {net};\n")
         f.write("\n")
 
-        for i, gate in enumerate(netlist["gates"]):
-            f.write(f"  {gate['typename']} gate_{i} (\n")
+        for gate in netlist["gates"]:
+            f.write(f"  {gate['typename']} gate_{gate['id']} (\n")
             f.write(
                 ",\n".join(
                     (
