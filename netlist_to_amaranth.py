@@ -36,6 +36,27 @@ class Gate:
     output_netname: str
 
 
+def prune(gates: dict[str, Gate], outputs: dict[str, str]) -> dict[str, Gate]:
+    reachable = set()
+    frontier = set(outputs.values())
+    while frontier:
+        current = frontier.pop()
+        reachable.add(current)
+        for input_gate in gates[current].inputs.values():
+            if input_gate not in reachable:
+                frontier.add(input_gate)
+
+    unreachable = Counter(
+        gate.typename for name, gate in gates.items() if name not in reachable
+    )
+    print(f"Pruning gates: {unreachable}")
+
+    result = {name: gate for name, gate in gates.items() if name in reachable}
+    print(f"Remaining gates: {len(result)}")
+
+    return result
+
+
 def main(_in: Path, out: Path):
     with _in.open("rt") as f:
         netlist = cast(JsonNetlist, json.load(f))
@@ -84,7 +105,7 @@ def main(_in: Path, out: Path):
         for gate in json_gates
         if len(OUTPUT_PINS.intersection(gate["connections"].keys())) == 0
     )
-    print(f"Pruning gates: {pruned_gates_counter}")
+    print(f"Pruning ouptut-less gates: {pruned_gates_counter}")
     json_gates = [
         gate
         for gate in json_gates
@@ -92,7 +113,7 @@ def main(_in: Path, out: Path):
     ]
 
     gates: dict[str, Gate] = {
-        f"{gate['typename']}_id_{gate["id"]}": Gate(
+        f"{gate['typename']}_id_{gate['id']}": Gate(
             typename=gate["typename"],
             x=gate["x"],
             y=gate["y"],
@@ -130,11 +151,70 @@ def main(_in: Path, out: Path):
             inputs={},
             output_netname=pin,
         )
+        net_drivers[pin] = pin
 
-    outputs = {pin: net_drivers[pin] for pin in netlist["pins"] if pin not in net_drivers}
+    outputs = {pin: net_drivers[pin] for pin in netlist["pins"] if pin not in inputs}
+
+    for gate in gates.values():
+        gate.inputs = {pin: net_drivers[net] for pin, net in gate.inputs.items()}
+
+    print("Pruning unused low/hide sides of conb cells")
+    gates = prune(gates, outputs)
 
     # Removing clock buffers
+    # Specifically, asserting that we on the same clock and reset domain
+    # Footnote for Amaranth generation: Amaranth only supports synchronous reset, and these gates are asynchronous.
+    # The test vectors will be designed so that this doesn't matter.
+    for gate in gates.values():
+        if gate.typename in {
+            "sky130_fd_sc_hd__dfrtp",
+            "sky130_fd_sc_hd__dfstp",
+            "sky130_fd_sc_hd__dfxtp",
+        }:
+            if gate.typename == "sky130_fd_sc_hd__dfrtp":
+                assert gate.inputs["RESET_B"] == "rst_n"
+                del gate.inputs["RESET_B"]
+            if gate.typename == "sky130_fd_sc_hd__dfstp":
+                assert gate.inputs["SET_B"] == "rst_n"
+                del gate.inputs["SET_B"]
+            clock_source = gate.inputs["CLK"]
+            while clock_source != "clk":
+                clock_source_gate = gates[clock_source]
+                assert clock_source_gate.typename == "sky130_fd_sc_hd__clkbuf"
+                clock_source = clock_source_gate.inputs["A"]
+
+            del gate.inputs["CLK"]
+
+    print("Pruning clock and reset trees")
+    gates = prune(gates, outputs)
+
     # Create clock enables (?)
+    for name, gate in gates.items():
+        if gate.typename in {
+            "sky130_fd_sc_hd__dfrtp",
+            "sky130_fd_sc_hd__dfstp",
+            "sky130_fd_sc_hd__dfxtp",
+        }:
+            input_gate = gates[gate.inputs["D"]]
+            if input_gate.typename == "sky130_fd_sc_hd__mux2":
+                assert input_gate.inputs["A1"] != name, (
+                    "inverted enable inputs not supported"
+                )
+                if input_gate.inputs["A0"] == name:
+                    print(
+                        f"Adding a clock enable ({input_gate.inputs['S']}) to a {gate.typename}"
+                    )
+                    gate.typename = {
+                        "sky130_fd_sc_hd__dfrtp": "custom__dfre",
+                        "sky130_fd_sc_hd__dfstp": "custom__dfse",
+                        "sky130_fd_sc_hd__dfxtp": "custom__dfe",
+                    }[gate.typename]
+                    gate.inputs["D"] = input_gate.inputs["A1"]
+                    gate.inputs["EN"] = input_gate.inputs["S"]
+
+    print("Pruning muxes absorbed by clock enable'd flipflops")
+    gates = prune(gates, outputs)
+
     # Segment to lumps
     # Write Amaranth to file
 
