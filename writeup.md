@@ -99,8 +99,8 @@
         * I'm thinking sum-of-products might be counterproductive for me reading it, actually, so I'm considering simplifying a logical expression lexically
         * Another idea is breaking out any expression with a fanout above a certin value into an intermediate
         * Or potentially, after chunking, it all becomes irrelevant, that would be convenient.
-4. Got verilog output, but it seems to make Amaranth (realistically, yosys) choke
-    * I'm not even sure it would be practical to simulate the resulting Verilog
+4. Got verilog output, but it takes 40 minutes to elaborate, most of which seems to be spent in Amaranth
+    * It doesn't seem to be practical to simulate the resulting 1M line Verilog, either.
     * But it works fine on the adder_demo
 
 # Register of Easter Eggs
