@@ -57,13 +57,13 @@ def prune(gates: dict[str, Gate], outputs: dict[str, str]) -> dict[str, Gate]:
     return result
 
 
-def serialize_combinatorial_expression(gates: dict[str, Gate], gate_name: str) -> str:
+def pretty_print_combinatorial_expression(gates: dict[str, Gate], gate_name: str) -> str:
     gate = gates[gate_name]
 
     def recurse(pin: str) -> str:
         # The oldest macro-processing trick in the book: we need to bracket this
         # to avoid weird precedence issues
-        return f"({serialize_combinatorial_expression(gates, gate.inputs[pin])})"
+        return f"({pretty_print_combinatorial_expression(gates, gate.inputs[pin])})"
 
     if gate.typename in {
         "custom__input",
@@ -284,7 +284,7 @@ def serialize_combinatorial_expression(gates: dict[str, Gate], gate_name: str) -
     else:
         raise RuntimeError(f"Unsupported gate type {gate.typename}!")
 
-    # This serialization is potentially exponential with the number of gates,
+    # This pretty-printing is potentially exponential with the number of gates,
     # and we have ~600 of those. Prevent an OOM, and I can't parse a 10K char
     # expression anyway.
     # Temporarily increased to 1M - that looks to be one funky boolean expression!
@@ -457,7 +457,7 @@ def main(_in: Path, out: Path):
     # WIP
     with out.open("wt") as f:
         for pin, gate_name in outputs.items():
-            f.write(f"{pin}: {serialize_combinatorial_expression(gates, gate_name)}\n")
+            f.write(f"{pin}: {pretty_print_combinatorial_expression(gates, gate_name)}\n")
         for gate in gates.values():
             if gate.typename in {
                 "sky130_fd_sc_hd__dfrtp",
@@ -465,7 +465,7 @@ def main(_in: Path, out: Path):
                 "sky130_fd_sc_hd__dfxtp",
             }:
                 f.write(
-                    f"{gate.output_netname}: {serialize_combinatorial_expression(gates, gate.inputs['D'])}\n"
+                    f"{gate.output_netname}: {pretty_print_combinatorial_expression(gates, gate.inputs['D'])}\n"
                 )
             if gate.typename in {
                 "custom__dfre",
@@ -473,10 +473,10 @@ def main(_in: Path, out: Path):
                 "custom__dfe",
             }:
                 f.write(
-                    f"{gate.output_netname}: {serialize_combinatorial_expression(gates, gate.inputs['D'])}\n"
+                    f"{gate.output_netname}: {pretty_print_combinatorial_expression(gates, gate.inputs['D'])}\n"
                 )
                 f.write(
-                    f"{gate.output_netname}_en: {serialize_combinatorial_expression(gates, gate.inputs['EN'])}\n"
+                    f"{gate.output_netname}_en: {pretty_print_combinatorial_expression(gates, gate.inputs['EN'])}\n"
                 )
 
 
