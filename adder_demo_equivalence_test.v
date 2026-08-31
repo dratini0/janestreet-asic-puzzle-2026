@@ -7,6 +7,7 @@ module adder_demo_equivalence_test (
     input  wire B,
     output wire S_original,
     output wire S_recovered_verilog,
+    output wire S_amaranth,
     input  wire en
 );
     adder_demo orignial (
@@ -24,6 +25,15 @@ module adder_demo_equivalence_test (
         .A(A),
         .B(B),
         .S(S_recovered_verilog),
+        .en(en)
+    );
+
+    adder_demo_amaranth amaranth (
+        .clk(clk),
+        .rst(!rst_n),
+        .A(A),
+        .B(B),
+        .S(S_amaranth),
         .en(en)
     );
 endmodule

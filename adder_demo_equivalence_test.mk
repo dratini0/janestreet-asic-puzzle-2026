@@ -8,6 +8,7 @@ VERILOG_SOURCES = sky130_sc_hd_verilog/primitives.v \
 sky130_sc_hd_verilog/sky130_fd_sc_hd.v \
 warmup/00_source.v \
 build/adder_demo_nets.v \
+build/adder_demo_amaranth.v \
 adder_demo_equivalence_test.v
 
 # COCOTB_TOPLEVEL is the name of the toplevel module in your Verilog or VHDL file

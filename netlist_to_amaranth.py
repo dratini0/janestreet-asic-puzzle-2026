@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 
 
+import io
 import json
+import re
 from argparse import ArgumentParser
 from collections import Counter
 from dataclasses import dataclass
-from itertools import chain
+from itertools import chain, groupby
 from pathlib import Path
 from typing import TypedDict, cast
 
@@ -57,7 +59,9 @@ def prune(gates: dict[str, Gate], outputs: dict[str, str]) -> dict[str, Gate]:
     return result
 
 
-def pretty_print_combinatorial_expression(gates: dict[str, Gate], gate_name: str) -> str:
+def pretty_print_combinatorial_expression(
+    gates: dict[str, Gate], gate_name: str
+) -> str:
     gate = gates[gate_name]
 
     def recurse(pin: str) -> str:
@@ -65,8 +69,9 @@ def pretty_print_combinatorial_expression(gates: dict[str, Gate], gate_name: str
         # to avoid weird precedence issues
         return f"({pretty_print_combinatorial_expression(gates, gate.inputs[pin])})"
 
-    if gate.typename in {
-        "custom__input",
+    if gate.typename == "custom__input":
+        result = f"self.{gate.output_netname}"
+    elif gate.typename in {
         "sky130_fd_sc_hd__dfrtp",
         "sky130_fd_sc_hd__dfstp",
         "sky130_fd_sc_hd__dfxtp",
@@ -74,7 +79,7 @@ def pretty_print_combinatorial_expression(gates: dict[str, Gate], gate_name: str
         "custom__dfse",
         "custom__dfe",
     }:
-        result = gate.output_netname
+        result = f"self._{gate.output_netname}"
     elif gate.typename in {"custom__const0", "custom__const1"}:
         result = gate.output_netname.upper()
     elif gate.typename == "sky130_fd_sc_hd__and2":
@@ -293,6 +298,72 @@ def pretty_print_combinatorial_expression(gates: dict[str, Gate], gate_name: str
     return result
 
 
+def sanitize_identifier(name: str) -> str:
+    return re.sub("[^a-zA-Z0-9]", "_", name)
+
+
+def write_amaranth_module(
+    f: io.Writer[str], name: str, gates: dict[str, Gate], outputs: dict[str, str]
+):
+    f.write(f"class {name}(wiring.Component):\n")
+    for gate in gates.values():
+        if gate.typename == "custom__input":
+            f.write(f"    {gate.output_netname}: In(1)\n")
+    for pin in outputs:
+        f.write(f"    {pin}: Out(1)\n")
+
+    f.write("\n    def __init__(self):\n")
+    for gate in gates.values():
+        if gate.typename in {"sky130_fd_sc_hd__dfrtp", "custom__dfre"}:
+            f.write(f"        self._{gate.output_netname} = Signal(1, init=0)\n")
+        if gate.typename in {"sky130_fd_sc_hd__dfstp", "custom__dfse"}:
+            f.write(f"        self._{gate.output_netname} = Signal(1, init=1)\n")
+        if gate.typename in {"sky130_fd_sc_hd__dfxtp", "custom__dfe"}:
+            f.write(
+                f"        self._{gate.output_netname} = Signal(1, reset_less=True)\n"
+            )
+    f.write("\n        super().__init__()\n\n")
+
+    f.write("    def elaborate(self, platform):\n        m = Module()\n\n")
+    f.write("        m.d.sync += [\n")
+    for gate in gates.values():
+        if gate.typename in {
+            "sky130_fd_sc_hd__dfrtp",
+            "sky130_fd_sc_hd__dfstp",
+            "sky130_fd_sc_hd__dfxtp",
+        }:
+            f.write(
+                f"            self._{gate.output_netname}.eq({pretty_print_combinatorial_expression(gates, gate.inputs['D'])}),\n"
+            )
+    f.write("        ]\n")
+
+    flops_with_enable = [
+        gate
+        for gate in gates.values()
+        if gate.typename in {"custom__dfre", "custom__dfse", "custom__dfe"}
+    ]
+    flops_with_enable.sort(key=lambda gate: gate.inputs["EN"])
+    for enable, group in groupby(flops_with_enable, key=lambda gate: gate.inputs["EN"]):
+        f.write(
+            f"\n        with m.If({pretty_print_combinatorial_expression(gates, enable)}):\n"
+        )
+        f.write("            m.d.sync += [\n")
+        for gate in group:
+            f.write(
+                f"                self._{gate.output_netname}.eq({pretty_print_combinatorial_expression(gates, gate.inputs['D'])}),\n"
+            )
+        f.write("            ]\n")
+
+    f.write("\n        m.d.comb += [\n")
+    for pin, driver in outputs.items():
+        f.write(
+            f"            self.{pin}.eq({pretty_print_combinatorial_expression(gates, driver)}),\n"
+        )
+    f.write("        ]\n")
+
+    f.write("\n        return m\n")
+
+
 def main(_in: Path, out: Path):
     with _in.open("rt") as f:
         netlist = cast(JsonNetlist, json.load(f))
@@ -397,6 +468,11 @@ def main(_in: Path, out: Path):
     print("Pruning unused low/hide sides of conb cells")
     gates = prune(gates, outputs)
 
+    # Sanitizing net names
+    outputs = {sanitize_identifier(net): driver for net, driver in outputs.items()}
+    for gate in gates.values():
+        gate.output_netname = sanitize_identifier(gate.output_netname)
+
     # Removing clock buffers
     # Specifically, asserting that we on the same clock and reset domain
     # Footnote for Amaranth generation: Amaranth only supports synchronous reset, and these gates are asynchronous.
@@ -450,34 +526,46 @@ def main(_in: Path, out: Path):
 
     print("Pruning muxes absorbed by clock enable'd flipflops")
     gates = prune(gates, outputs)
+    ports = [
+        gate.output_netname
+        for gate in gates.values()
+        if gate.typename == "custom__input"
+    ] + list(outputs.keys())
 
     # Segment to lumps
     # TODO
     # Write Amaranth to file
-    # WIP
+
+    constants = {
+        gate.output_netname.upper(): (1 if gate.typename == "custom__const1" else 0)
+        for gate in gates.values()
+        if gate.typename in {"custom__const0", "custom__const1"}
+    }
     with out.open("wt") as f:
-        for pin, gate_name in outputs.items():
-            f.write(f"{pin}: {pretty_print_combinatorial_expression(gates, gate_name)}\n")
-        for gate in gates.values():
-            if gate.typename in {
-                "sky130_fd_sc_hd__dfrtp",
-                "sky130_fd_sc_hd__dfstp",
-                "sky130_fd_sc_hd__dfxtp",
-            }:
-                f.write(
-                    f"{gate.output_netname}: {pretty_print_combinatorial_expression(gates, gate.inputs['D'])}\n"
-                )
-            if gate.typename in {
-                "custom__dfre",
-                "custom__dfse",
-                "custom__dfe",
-            }:
-                f.write(
-                    f"{gate.output_netname}: {pretty_print_combinatorial_expression(gates, gate.inputs['D'])}\n"
-                )
-                f.write(
-                    f"{gate.output_netname}_en: {pretty_print_combinatorial_expression(gates, gate.inputs['EN'])}\n"
-                )
+        f.write(
+            "from sys import argv\n"
+            "\n"
+            "from amaranth import *\n"
+            "from amaranth.lib import wiring\n"
+            "from amaranth.lib.wiring import In, Out\n"
+            "\n"
+        )
+
+        for constant, value in constants.items():
+            f.write(f"{constant} = {value}\n")
+
+        f.write("\ndef Buf(expr):\n    return expr\n\n")
+
+        write_amaranth_module(f, netlist["name"], gates, outputs)
+
+        f.write(
+            "\n"
+            'if __name__ == "__main__":\n'
+            "    from amaranth.back import verilog\n"
+            f"    top = {netlist['name']}()\n"
+            '    with open(argv[1], "wt") as f:\n'
+            f'        f.write(verilog.convert(top, name="{netlist["name"]}_amaranth", ports=[{", ".join(f"top.{port}" for port in ports)}]))\n'
+        )
 
 
 if __name__ == "__main__":
