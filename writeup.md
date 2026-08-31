@@ -83,5 +83,24 @@
     * I will just add a constant 0 to it, and hope for the best! That's so weird.
     * Actually, one better, I will turn it into an input. Nasty hack, but it works, because while Amaranth can't model z's, the verilog it generates will handle it just fine... I think.
 
+# Day 5
+
+1. Added the gate ID to the json netlists, just to be able to refer back to klayout
+2. Added a way to remove the clock and reset nets (after confirming that everything is on the same clock and reset domain)
+3. Implemented the DFF + MUX = DFFE transformation (gets rid of 12/16 muxes, hmm!)]
+
+# Day 7
+
+1. I want to finish this today.
+2. Took cells.json from: https://github.com/TinyTapeout/tt-support-tools/blob/main/tech/sky130A/cells.json
+3. Got some very basic expression output (no logic minimization)
+    * it seems like the input does go into a 12-stage shift register. This shift register is enabled by the enable input and some state
+    * There are quite a lot of completely unmanagable logical expressions in there, so we need to sort out lumping and (probably) some form of logic minimization
+        * I'm thinking sum-of-products might be counterproductive for me reading it, actually, so I'm considering simplifying a logical expression lexically
+        * Another idea is breaking out any expression with a fanout above a certin value into an intermediate
+        * Or potentially, after chunking, it all becomes irrelevant, that would be convenient.
+
+
+
 # Register of Easter Eggs
 * Jane Street logo on met2 (I suppose it's an easter egg, since it wasn't in the PNG, but not exactly a major achievement to find it)

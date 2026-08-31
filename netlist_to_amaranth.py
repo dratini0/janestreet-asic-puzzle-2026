@@ -57,6 +57,242 @@ def prune(gates: dict[str, Gate], outputs: dict[str, str]) -> dict[str, Gate]:
     return result
 
 
+def serialize_combinatorial_expression(gates: dict[str, Gate], gate_name: str) -> str:
+    gate = gates[gate_name]
+
+    def recurse(pin: str) -> str:
+        # The oldest macro-processing trick in the book: we need to bracket this
+        # to avoid weird precedence issues
+        return f"({serialize_combinatorial_expression(gates, gate.inputs[pin])})"
+
+    if gate.typename in {
+        "custom__input",
+        "sky130_fd_sc_hd__dfrtp",
+        "sky130_fd_sc_hd__dfstp",
+        "sky130_fd_sc_hd__dfxtp",
+        "custom__dfre",
+        "custom__dfse",
+        "custom__dfe",
+    }:
+        result = gate.output_netname
+    elif gate.typename in {"custom__const0", "custom__const1"}:
+        result = gate.output_netname.upper()
+    elif gate.typename == "sky130_fd_sc_hd__and2":
+        result = f"{recurse('A')} & {recurse('B')}"
+    elif gate.typename == "sky130_fd_sc_hd__and3":
+        result = f"{recurse('A')} & {recurse('B')} & {recurse('C')}"
+    elif gate.typename == "sky130_fd_sc_hd__and4":
+        result = f"{recurse('A')} & {recurse('B')} & {recurse('C')} & {recurse('D')}"
+    elif gate.typename == "sky130_fd_sc_hd__or2":
+        result = f"{recurse('A')} | {recurse('B')}"
+    elif gate.typename == "sky130_fd_sc_hd__or3":
+        result = f"{recurse('A')} | {recurse('B')} | {recurse('C')}"
+    elif gate.typename == "sky130_fd_sc_hd__or4":
+        result = f"{recurse('A')} | {recurse('B')} | {recurse('C')} | {recurse('D')}"
+    elif gate.typename == "sky130_fd_sc_hd__and2b":
+        result = f"~{recurse('A_N')} & {recurse('B')}"
+    elif gate.typename == "sky130_fd_sc_hd__and3b":
+        result = f"~{recurse('A_N')} & {recurse('B')} & {recurse('C')}"
+    elif gate.typename == "sky130_fd_sc_hd__and4b":
+        result = f"~{recurse('A_N')} & {recurse('B')} & {recurse('C')} & {recurse('D')}"
+    elif gate.typename == "sky130_fd_sc_hd__and4bb":
+        result = (
+            f"~{recurse('A_N')} & ~{recurse('B_N')} & {recurse('C')} & {recurse('D')}"
+        )
+    elif gate.typename == "sky130_fd_sc_hd__or2b":
+        result = f"{recurse('A')} | ~{recurse('B_N')}"
+    elif gate.typename == "sky130_fd_sc_hd__or3b":
+        result = f"{recurse('A')} | {recurse('B')} | ~{recurse('C_N')}"
+    elif gate.typename == "sky130_fd_sc_hd__or4b":
+        result = f"{recurse('A')} | {recurse('B')} | {recurse('C')} | ~{recurse('D_N')}"
+    elif gate.typename == "sky130_fd_sc_hd__or4bb":
+        result = (
+            f"{recurse('A')} | ~{recurse('B')} | ~{recurse('C_N')} | ~{recurse('D_N')}"
+        )
+    elif gate.typename == "sky130_fd_sc_hd__nand2":
+        result = f"~({recurse('A')} & {recurse('B')})"
+    elif gate.typename == "sky130_fd_sc_hd__nand3":
+        result = f"~({recurse('A')} & {recurse('B')} & {recurse('C')})"
+    elif gate.typename == "sky130_fd_sc_hd__nand4":
+        result = f"~({recurse('A')} & {recurse('B')} & {recurse('C')} & {recurse('D')})"
+    elif gate.typename == "sky130_fd_sc_hd__nor2":
+        result = f"~({recurse('A')} | {recurse('B')})"
+    elif gate.typename == "sky130_fd_sc_hd__nor3":
+        result = f"~({recurse('A')} | {recurse('B')} | {recurse('C')})"
+    elif gate.typename == "sky130_fd_sc_hd__nor4":
+        result = f"~({recurse('A')} | {recurse('B')} | {recurse('C')} | {recurse('D')})"
+    elif gate.typename == "sky130_fd_sc_hd__nand2b":
+        result = f"~(~{recurse('A_N')} & {recurse('B')})"
+    elif gate.typename == "sky130_fd_sc_hd__nand3b":
+        result = f"~(~{recurse('A_N')} & {recurse('B')} & {recurse('C')})"
+    elif gate.typename == "sky130_fd_sc_hd__nand4b":
+        result = (
+            f"~(~{recurse('A_N')} & {recurse('B')} & {recurse('C')} & {recurse('D')})"
+        )
+    elif gate.typename == "sky130_fd_sc_hd__nand4bb":
+        result = f"~(~{recurse('A_N')} & ~{recurse('B_N')} & {recurse('C')} & {recurse('D')})"
+    elif gate.typename == "sky130_fd_sc_hd__nor2b":
+        result = f"~({recurse('A')} | ~{recurse('B_N')})"
+    elif gate.typename == "sky130_fd_sc_hd__nor3b":
+        result = f"~({recurse('A')} | {recurse('B')} | ~{recurse('C_N')})"
+    elif gate.typename == "sky130_fd_sc_hd__nor4b":
+        result = (
+            f"~({recurse('A')} | {recurse('B')} | {recurse('C')} | ~{recurse('D_N')})"
+        )
+    elif gate.typename == "sky130_fd_sc_hd__nor4bb":
+        result = f"~({recurse('A')} | ~{recurse('B')} | ~{recurse('C_N')} | ~{recurse('D_N')})"
+    elif gate.typename == "sky130_fd_sc_hd__xnor3":
+        result = f"~({recurse('A')} ^ {recurse(pin='B')} ^ {recurse('C')})"
+    elif gate.typename == "sky130_fd_sc_hd__inv":
+        result = f"~{recurse('A')}"
+    elif gate.typename == "sky130_fd_sc_hd__mux2":
+        result = f"Mux({recurse('S')}, {recurse('A1')}, {recurse('A0')})"
+    elif gate.typename == "sky130_fd_sc_hd__buf":
+        result = f"Buf({recurse('A')})"
+    # Edited version of https://github.com/TinyTapeout/tt-support-tools/blob/main/tech/sky130A/cells.json
+    elif gate.typename == "sky130_fd_sc_hd__o31ai":
+        result = f"~(({recurse('A1')} | {recurse('A2')} | {recurse('A3')}) & {recurse('B1')})"
+    elif gate.typename == "sky130_fd_sc_hd__a221o":
+        result = f"(({recurse('A1')} & {recurse('A2')}) | ({recurse('B1')} & {recurse('B2')}) | {recurse('C1')})"
+    elif gate.typename == "sky130_fd_sc_hd__a2111oi":
+        result = f"~(({recurse('A1')} & {recurse('A2')}) | {recurse('B1')} | {recurse('C1')} | {recurse('D1')})"
+    elif gate.typename == "sky130_fd_sc_hd__a21bo":
+        result = f"(({recurse('A1')} & {recurse('A2')}) | (~{recurse('B1_N')}))"
+    elif gate.typename == "sky130_fd_sc_hd__o31a":
+        result = (
+            f"(({recurse('A1')} | {recurse('A2')} | {recurse('A3')}) & {recurse('B1')})"
+        )
+    elif gate.typename == "sky130_fd_sc_hd__o221a":
+        result = f"(({recurse('A1')} | {recurse('A2')}) & ({recurse('B1')} | {recurse('B2')}) & {recurse('C1')})"
+    elif gate.typename == "sky130_fd_sc_hd__o32ai":
+        result = f"~(({recurse('A1')} | {recurse('A2')} | {recurse('A3')}) & ({recurse('B1')} | {recurse('B2')}))"
+    elif gate.typename == "sky130_fd_sc_hd__a21oi":
+        result = f"~(({recurse('A1')} & {recurse('A2')}) | {recurse('B1')})"
+    elif gate.typename == "sky130_fd_sc_hd__a21boi":
+        result = f"~(({recurse('A1')} & {recurse('A2')}) | (~{recurse('B1_N')}))"
+    elif gate.typename == "sky130_fd_sc_hd__a311oi":
+        result = f"~(({recurse('A1')} & {recurse('A2')} & {recurse('A3')}) | {recurse('B1')} | {recurse('C1')})"
+    elif gate.typename == "sky130_fd_sc_hd__lpflow_inputiso0p":
+        result = f"({recurse('A')} & ~{recurse('SLEEP_B')})"
+    elif gate.typename == "sky130_fd_sc_hd__a32o":
+        result = f"(({recurse('A1')} & {recurse('A2')} & {recurse('A3')}) | ({recurse('B1')} & {recurse('B2')}))"
+    elif gate.typename == "sky130_fd_sc_hd__a22o":
+        result = f"(({recurse('A1')} & {recurse('A2')}) | ({recurse('B1')} & {recurse('B2')}))"
+    elif gate.typename == "sky130_fd_sc_hd__o2111a":
+        result = f"(({recurse('A1')} | {recurse('A2')}) & {recurse('B1')} & {recurse('C1')} & {recurse('D1')})"
+    elif gate.typename == "sky130_fd_sc_hd__lpflow_inputiso0n":
+        result = f"({recurse('A')} & {recurse('SLEEP_B')})"
+    elif gate.typename == "sky130_fd_sc_hd__o21ba":
+        result = f"(({recurse('A1')} | {recurse('A2')}) & ~{recurse('B1_N')})"
+    elif gate.typename == "sky130_fd_sc_hd__a21o":
+        result = f"(({recurse('A1')} & {recurse('A2')}) | {recurse('B1')})"
+    elif gate.typename == "sky130_fd_sc_hd__a211o":
+        result = (
+            f"(({recurse('A1')} & {recurse('A2')}) | {recurse('B1')} | {recurse('C1')})"
+        )
+    elif gate.typename == "sky130_fd_sc_hd__a221oi":
+        result = f"~(({recurse('A1')} & {recurse('A2')}) | ({recurse('B1')} & {recurse('B2')}) | {recurse('C1')})"
+    elif gate.typename == "sky130_fd_sc_hd__a2bb2o":
+        result = f"((~{recurse('A1')} & ~{recurse('A2')}) | ({recurse('B1')} & {recurse('B2')}))"
+    elif gate.typename == "sky130_fd_sc_hd__a31o":
+        result = (
+            f"(({recurse('A1')} & {recurse('A2')} & {recurse('A3')}) | {recurse('B1')})"
+        )
+    elif gate.typename == "sky130_fd_sc_hd__a2bb2oi":
+        result = f"~((~{recurse('A1')} & ~{recurse('A2')}) | ({recurse('B1')} & {recurse('B2')}))"
+    elif gate.typename == "sky130_fd_sc_hd__o211a":
+        result = (
+            f"(({recurse('A1')} | {recurse('A2')}) & {recurse('B1')} & {recurse('C1')})"
+        )
+    elif gate.typename == "sky130_fd_sc_hd__o311a":
+        result = f"(({recurse('A1')} | {recurse('A2')} | {recurse('A3')}) & {recurse('B1')} & {recurse('C1')})"
+    elif gate.typename == "sky130_fd_sc_hd__o22a":
+        result = f"(({recurse('A1')} | {recurse('A2')}) & ({recurse('B1')} | {recurse('B2')}))"
+    elif gate.typename == "sky130_fd_sc_hd__o22ai":
+        result = f"~(({recurse('A1')} | {recurse('A2')}) & ({recurse('B1')} | {recurse('B2')}))"
+    elif gate.typename == "sky130_fd_sc_hd__a2111o":
+        result = f"(({recurse('A1')} & {recurse('A2')}) | {recurse('B1')} | {recurse('C1')} | {recurse('D1')})"
+    elif gate.typename == "sky130_fd_sc_hd__o2bb2a":
+        result = f"(~({recurse('A1_N')} & {recurse('A2_N')}) & ({recurse('B1')} | {recurse('B2')}))"
+    elif gate.typename == "sky130_fd_sc_hd__o2bb2ai":
+        result = f"~(~({recurse('A1')} & {recurse('A2')}) & ({recurse('B1')} | {recurse('B2')}))"
+    elif gate.typename == "sky130_fd_sc_hd__o32a":
+        result = f"(({recurse('A1')} | {recurse('A2')} | {recurse('A3')}) & ({recurse('B1')} | {recurse('B2')}))"
+    elif gate.typename == "sky130_fd_sc_hd__lpflow_inputiso1p":
+        result = f"({recurse('A')} & ~{recurse('SLEEP')})"
+    elif gate.typename == "sky130_fd_sc_hd__o21bai":
+        result = f"~(({recurse('A1')} | {recurse('A2')}) & ~{recurse('B1_N')})"
+    elif gate.typename == "sky130_fd_sc_hd__o2111ai":
+        result = f"~(({recurse('A1')} | {recurse('A2')}) & {recurse('B1')} & {recurse('C1')} & {recurse('D1')})"
+    elif gate.typename == "sky130_fd_sc_hd__xor3":
+        result = f"{recurse('A')} ^ {recurse('B')} ^ {recurse('C')}"
+    # Wrong!
+    # elif gate.typename == "sky130_fd_sc_hd__nor2b":
+    #     result = (
+    #         f"~({recurse('A')} | {recurse('B')} | {recurse('C')} | ~{recurse('D')})"
+    #     )
+    elif gate.typename == "sky130_fd_sc_hd__o41ai":
+        result = f"~(({recurse('A1')} | {recurse('A2')} | {recurse('A3')} | {recurse('A4')}) & {recurse('B1')})"
+    elif gate.typename == "sky130_fd_sc_hd__a211oi":
+        result = f"~(({recurse('A1')} & {recurse('A2')}) | {recurse('B1')} | {recurse('C1')})"
+    # Wrong!
+    # elif gate.typename == "sky130_fd_sc_hd__nor3":
+    #     result = (
+    #         f"~({recurse('A')} | {recurse('B')} | {recurse('C')} | ~{recurse('D')})"
+    #     )
+    elif gate.typename == "sky130_fd_sc_hd__a31oi":
+        result = f"~(({recurse('A1')} & {recurse('A2')} & {recurse('A3')}) | {recurse('B1')})"
+    elif gate.typename == "sky130_fd_sc_hd__o21ai":
+        result = f"~(({recurse('A1')} | {recurse('A2')}) & {recurse('B1')})"
+    elif gate.typename == "sky130_fd_sc_hd__lpflow_isobufsrckapwr":
+        result = f"(~{recurse('A')} | {recurse('SLEEP')})"
+    elif gate.typename == "sky130_fd_sc_hd__a22oi":
+        result = f"~(({recurse('A1')} & {recurse('A2')}) | ({recurse('B1')} & {recurse('B2')}))"
+    # elif gate.typename == "sky130_fd_sc_hd__nor4":
+    #     result = f"~({recurse('A')} | {recurse('B')} | {recurse('C')} | {recurse('D')})"
+    elif gate.typename == "sky130_fd_sc_hd__a222oi":
+        result = f"~(({recurse('A1')} & {recurse('A2')}) | ({recurse('B1')} & {recurse('B2')}) | ({recurse('C1')} & {recurse('C2')}))"
+    elif gate.typename == "sky130_fd_sc_hd__o21a":
+        result = f"(({recurse('A1')} | {recurse('A2')}) & {recurse('B1')})"
+    elif gate.typename == "sky130_fd_sc_hd__o211ai":
+        result = f"~(({recurse('A1')} | {recurse('A2')}) & {recurse('B1')} & {recurse('C1')})"
+    elif gate.typename == "sky130_fd_sc_hd__lpflow_isobufsrc":
+        result = f"(~{recurse('A')} | {recurse('SLEEP')})"
+    elif gate.typename == "sky130_fd_sc_hd__lpflow_inputiso1n":
+        result = f"({recurse('A')} & {recurse('SLEEP_B')})"
+    elif gate.typename == "sky130_fd_sc_hd__a32oi":
+        result = f"~(({recurse('A1')} & {recurse('A2')} & {recurse('A3')}) | ({recurse('B1')} & {recurse('B2')}))"
+    elif gate.typename == "sky130_fd_sc_hd__o41a":
+        result = f"(({recurse('A1')} | {recurse('A2')} | {recurse('A3')} | {recurse('A4')}) & {recurse('B1')})"
+    elif gate.typename == "sky130_fd_sc_hd__xor2":
+        result = f"{recurse('A')} ^ {recurse('B')}"
+    elif gate.typename == "sky130_fd_sc_hd__a41o":
+        result = f"(({recurse('A1')} & {recurse('A2')} & {recurse('A3')} & {recurse('A4')}) | {recurse('B1')})"
+    elif gate.typename == "sky130_fd_sc_hd__o221ai":
+        result = f"~(({recurse('A1')} | {recurse('A2')}) & ({recurse('B1')} | {recurse('B2')}) & {recurse('C1')})"
+    elif gate.typename == "sky130_fd_sc_hd__xnor2":
+        result = f"~({recurse('A')} ^ {recurse('B')})"
+    elif gate.typename == "sky130_fd_sc_hd__o311ai":
+        result = f"~(({recurse('A1')} | {recurse('A2')} | {recurse('A3')}) & {recurse('B1')} & {recurse('C1')})"
+    # elif gate.typename == "sky130_fd_sc_hd__nor3b":
+    #     result = f"(~({recurse('A')} | {recurse('B')})) & ~{recurse('C')})"
+    elif gate.typename == "sky130_fd_sc_hd__a311o":
+        result = f"(({recurse('A1')} & {recurse('A2')} & {recurse('A3')}) | {recurse('B1')} | {recurse('C1')})"
+    elif gate.typename == "sky130_fd_sc_hd__a41oi":
+        result = f"~(({recurse('A1')} & {recurse('A2')} & {recurse('A3')} & {recurse('A4')}) | {recurse('B1')})"
+
+    else:
+        raise RuntimeError(f"Unsupported gate type {gate.typename}!")
+
+    # This serialization is potentially exponential with the number of gates,
+    # and we have ~600 of those. Prevent an OOM, and I can't parse a 10K char
+    # expression anyway.
+    # Temporarily increased to 1M - that looks to be one funky boolean expression!
+    if len(result) > 1_000_000:
+        raise RuntimeError("Boolean expression too long")
+    return result
+
+
 def main(_in: Path, out: Path):
     with _in.open("rt") as f:
         netlist = cast(JsonNetlist, json.load(f))
@@ -216,7 +452,32 @@ def main(_in: Path, out: Path):
     gates = prune(gates, outputs)
 
     # Segment to lumps
+    # TODO
     # Write Amaranth to file
+    # WIP
+    with out.open("wt") as f:
+        for pin, gate_name in outputs.items():
+            f.write(f"{pin}: {serialize_combinatorial_expression(gates, gate_name)}\n")
+        for gate in gates.values():
+            if gate.typename in {
+                "sky130_fd_sc_hd__dfrtp",
+                "sky130_fd_sc_hd__dfstp",
+                "sky130_fd_sc_hd__dfxtp",
+            }:
+                f.write(
+                    f"{gate.output_netname}: {serialize_combinatorial_expression(gates, gate.inputs['D'])}\n"
+                )
+            if gate.typename in {
+                "custom__dfre",
+                "custom__dfse",
+                "custom__dfe",
+            }:
+                f.write(
+                    f"{gate.output_netname}: {serialize_combinatorial_expression(gates, gate.inputs['D'])}\n"
+                )
+                f.write(
+                    f"{gate.output_netname}_en: {serialize_combinatorial_expression(gates, gate.inputs['EN'])}\n"
+                )
 
 
 if __name__ == "__main__":
