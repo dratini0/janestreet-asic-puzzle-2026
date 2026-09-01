@@ -138,8 +138,10 @@ class Module:
             "custom__dfe",
         }:
             result = f"self._{gate.output_netname}"
-        elif gate.typename in {"custom__const0", "custom__const1"}:
-            result = gate.output_netname.upper()
+        elif gate.typename == "custom__const0":
+            result = "0"
+        elif gate.typename == "custom__const1":
+            result = "1"
         elif gate.typename == "sky130_fd_sc_hd__and2":
             result = f"{recurse('A')} & {recurse('B')}"
         elif gate.typename == "sky130_fd_sc_hd__and3":
@@ -727,11 +729,6 @@ def generate_amaranth(in_: Path, out: Path, enable_lumping=True):
 
     # Write Amaranth to file
 
-    constants = {
-        gate.output_netname.upper(): (1 if gate.typename == "custom__const1" else 0)
-        for gate in top.gates.values()
-        if gate.typename in {"custom__const0", "custom__const1"}
-    }
     with out.open("wt") as f:
         f.write(
             "from sys import argv\n"
@@ -741,9 +738,6 @@ def generate_amaranth(in_: Path, out: Path, enable_lumping=True):
             "from amaranth.lib.wiring import In, Out\n"
             "\n"
         )
-
-        for constant, value in constants.items():
-            f.write(f"{constant} = {value}\n")
 
         f.write("\ndef Buf(expr):\n    return expr\n\n")
 
