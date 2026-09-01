@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 
+from matplotlib.ticker import MultipleLocator
 import io
 import json
 import re
@@ -623,16 +624,21 @@ class Module:
         ]
 
         _fig, ax = plt.subplots()
+        ax.set_title(f"{self.name} lumps")
         ax.plot(
             [gate.x for gate in combinatorial_gates],
             [gate.y for gate in combinatorial_gates],
             "r.",
+            label="comb",
         )
         ax.plot(
             [gate.x for gate in sequential_gates],
             [gate.y for gate in sequential_gates],
             "b.",
+            label="ff",
         )
+        ax.xaxis.set_major_locator(MultipleLocator(20))
+        ax.yaxis.set_major_locator(MultipleLocator(20))
 
         if lumps:
             for lump in lumps:
@@ -651,6 +657,8 @@ class Module:
                     lump.name,
                     ha="center",
                 )
+
+        ax.legend()
 
         plt.show()
 

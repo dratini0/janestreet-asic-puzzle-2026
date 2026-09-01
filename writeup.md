@@ -105,6 +105,8 @@
 5. Lumping brought this down to 4s, and the generated Verilog is now only 40K lines long
     * This means it can be simulated. It looks like there is a mismatch though.
 
+![](lumps.svg)
+
 # Day 8
 
 1. I have figured out the mystery of the constants
