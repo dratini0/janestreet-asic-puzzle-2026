@@ -244,8 +244,10 @@ class adder_demo(wiring.Component):
         ]
 
         m.d.comb += [
-            self.S.eq(m.submodules.compare496.S),
+            self.S.eq(m.submodules.compare496.net_18),
         ]
+
+        return m
 
 if __name__ == "__main__":
     from amaranth.back import verilog

@@ -102,6 +102,8 @@
 4. Got verilog output, but it takes 40 minutes to elaborate, most of which seems to be spent in Amaranth
     * It doesn't seem to be practical to simulate the resulting 1M line Verilog, either.
     * But it works fine on the adder_demo
+5. Lumping brought this down to 4s, and the generated Verilog is now only 40K lines long
+    * This means it can be simulated. It looks like there is a mismatch though.
 
 # Register of Easter Eggs
 * Jane Street logo on met2 (I suppose it's an easter egg, since it wasn't in the PNG, but not exactly a major achievement to find it)

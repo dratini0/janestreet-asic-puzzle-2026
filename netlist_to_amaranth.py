@@ -48,14 +48,45 @@ class Lump:
     y1: float
 
 
+# fmt: off
 LUMPS = {
     "adder_demo": [
         Lump("ShiftRegisterA", 0.0, 50.0, 50.0, 100.0),
         Lump("ShiftRegisterB", 0.0, 50.0, 0.0, 50.0),
         Lump("Compare496", 50.0, 100.0, 42.0, 100.0),
         Lump("Add", 50.0, 100.0, 0.0, 42.0),
-    ]
+    ],
+    "puzzle": [
+        # Named after Sinnoh region towns, since I don't acctually know what
+        # each one does yet
+
+        # Column 1
+        Lump("Floaroma", 0., 50., 180., 250.,),
+        Lump("Jubilife", 0., 50., 125., 180.,),
+        Lump("Twinleaf", 0., 50., 70., 125.,),
+        # Column 2
+        Lump("Snowpoint", 50., 100., 125., 180.,),
+        Lump("Eterna", 50., 100., 70., 125.,),
+        Lump("Oreburgh", 50., 100., 30., 70.,),
+        Lump("Sandgem", 50., 100., 0., 30.,),
+        # Column 3
+        # I'm not sure these three are separate lumps, but let's try
+        Lump("Celestic", 100., 140., 265., 300.),
+        Lump("Hearthome", 100., 140., 195., 265.),
+        Lump("Solaceon", 100., 140., 160., 195.),
+
+        Lump("Pastoria", 100., 140., 30., 160.),
+        # Column 4
+        Lump("Veilstone", 140., 200., 265., 300.),
+        Lump("Output_MtCoronet", 140., 200., 235., 265.),
+        Lump("Output_EternaForest", 140., 200., 160., 235.),
+        Lump("Output_LakeAcuity", 140., 200., 125., 160.),
+        Lump("Output_LakeVerity", 140., 200., 105., 125.),
+        Lump("Output_LakeValor", 140., 200., 70., 105.),
+        Lump("Sunnyshore", 140., 200., 0., 70.),
+    ],
 }
+# fmt: on
 
 
 def sanitize_identifier(name: str) -> str:
@@ -730,11 +761,10 @@ def main(_in: Path, out: Path):
         f.write("        ]\n")
 
         f.write("\n        m.d.comb += [\n")
-        for pin, driver in top.outputs.items():
-            net = top.gates[driver].output_netname
-            source = net_to_lump[net]
+        for pin in top.outputs:
+            source = net_to_lump[pin]
             f.write(
-                f"            self.{net}.eq(m.submodules.{source.lower()}.{net}),\n"
+                f"            self.{pin}.eq(m.submodules.{source.lower()}.{pin}),\n"
             )
         f.write("        ]\n")
         f.write("\n        return m\n\n")
