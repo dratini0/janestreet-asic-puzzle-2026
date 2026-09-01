@@ -105,5 +105,12 @@
 5. Lumping brought this down to 4s, and the generated Verilog is now only 40K lines long
     * This means it can be simulated. It looks like there is a mismatch though.
 
+# Day 8
+
+1. I have figured out the mystery of the constants
+    * They are there because the puzzle author explicitly disabled any optimization between the functional modules (thank you!)
+    * So, if one of a module's outputs optimizes to a constant, it gets synthesized to a constant
+2. The mismatch turned out to be a pair of typo'd formulas, as well as the async/sync reset mismatch
+
 # Register of Easter Eggs
 * Jane Street logo on met2 (I suppose it's an easter egg, since it wasn't in the PNG, but not exactly a major achievement to find it)

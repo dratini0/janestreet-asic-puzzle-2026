@@ -83,7 +83,7 @@ LUMPS = {
         Lump("Output_LakeAcuity", 140., 200., 125., 160.),
         Lump("Output_LakeVerity", 140., 200., 105., 125.),
         Lump("Output_LakeValor", 140., 200., 70., 105.),
-        Lump("Sunnyshore", 140., 200., 0., 70.),
+        Lump("Sunyshore", 140., 200., 0., 70.),
     ],
 }
 # fmt: on
@@ -175,7 +175,7 @@ class Module:
                 f"{recurse('A')} | {recurse('B')} | {recurse('C')} | ~{recurse('D_N')}"
             )
         elif gate.typename == "sky130_fd_sc_hd__or4bb":
-            result = f"{recurse('A')} | ~{recurse('B')} | ~{recurse('C_N')} | ~{recurse('D_N')}"
+            result = f"{recurse('A')} | {recurse('B')} | ~{recurse('C_N')} | ~{recurse('D_N')}"
         elif gate.typename == "sky130_fd_sc_hd__nand2":
             result = f"~({recurse('A')} & {recurse('B')})"
         elif gate.typename == "sky130_fd_sc_hd__nand3":
@@ -207,7 +207,7 @@ class Module:
         elif gate.typename == "sky130_fd_sc_hd__nor4b":
             result = f"~({recurse('A')} | {recurse('B')} | {recurse('C')} | ~{recurse('D_N')})"
         elif gate.typename == "sky130_fd_sc_hd__nor4bb":
-            result = f"~({recurse('A')} | ~{recurse('B')} | ~{recurse('C_N')} | ~{recurse('D_N')})"
+            result = f"~({recurse('A')} | {recurse('B')} | ~{recurse('C_N')} | ~{recurse('D_N')})"
         elif gate.typename == "sky130_fd_sc_hd__xnor3":
             result = f"~({recurse('A')} ^ {recurse(pin='B')} ^ {recurse('C')})"
         elif gate.typename == "sky130_fd_sc_hd__inv":
