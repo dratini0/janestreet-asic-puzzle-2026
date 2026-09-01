@@ -111,6 +111,12 @@
     * They are there because the puzzle author explicitly disabled any optimization between the functional modules (thank you!)
     * So, if one of a module's outputs optimizes to a constant, it gets synthesized to a constant
 2. The mismatch turned out to be a pair of typo'd formulas, as well as the async/sync reset mismatch
+3. Solution progress
+    * Floaroma keeps a done flag, and gates the enable signal when the done flag is high
+    * Jubilife and Twinleaf are cascaded count-to-11 counters (Jubilife first)
+    * When both Jubilife and Twinleaf overflow, done is set (therefore, exactly after 121 bits, as I have noticed before)
+    * Veilstone blanks out O[7:0] under some conditions, but I haven't figured out the conditions yet.
+    * Not starting to edit the file yet, until I have figured out a bit better formatting and logic minimization (because I don't feel like dealing with 30k character lines, not gonna lie!)
 
 # Register of Easter Eggs
 * Jane Street logo on met2 (I suppose it's an easter egg, since it wasn't in the PNG, but not exactly a major achievement to find it)
