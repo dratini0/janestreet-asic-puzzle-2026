@@ -8,6 +8,7 @@ VERILOG_SOURCES = sky130_sc_hd_verilog/primitives.v \
 sky130_sc_hd_verilog/sky130_fd_sc_hd.v \
 build/puzzle_nets.v \
 build/puzzle_amaranth.v \
+build/puzzle_solution.v \
 puzzle_equivalence_test.v
 
 # COCOTB_TOPLEVEL is the name of the toplevel module in your Verilog or VHDL file

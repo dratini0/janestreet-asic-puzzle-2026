@@ -115,7 +115,9 @@ async def check_equivalence(dut):
         # sync/async reset issue, so ignore differences while held in reset
         if dut.rst_n.value:
             assert dut.success_recovered_verilog.value == dut.success_amaranth.value
+            assert dut.success_recovered_verilog.value == dut.success_solution.value
             assert dut.O_recovered_verilog.value == dut.O_amaranth.value
+            assert dut.O_recovered_verilog.value == dut.O_solution.value
             for net in inter_module_nets:
                 reference_val: cocotb.types.Logic = getattr(
                     dut.recovered_verilog, net
@@ -123,6 +125,7 @@ async def check_equivalence(dut):
                 # In Amaranth, registers always start initialized - forgive this
                 if reference_val == 0 or reference_val == 1:
                     assert reference_val == getattr(dut.amaranth, net).value
+                    assert reference_val == getattr(dut.solution, net).value
 
 
 @cocotb.test()

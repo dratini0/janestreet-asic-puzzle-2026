@@ -1269,4 +1269,4 @@ if __name__ == "__main__":
     from amaranth.back import verilog
     top = puzzle()
     with open(argv[1], "wt") as f:
-        f.write(verilog.convert(top, name="puzzle_amaranth", ports=[top.I, top.enable, top.net_1447, top.O_0_, top.O_1_, top.O_2_, top.O_3_, top.O_4_, top.O_5_, top.O_6_, top.O_7_, top.success]))
+        f.write(verilog.convert(top, name="puzzle_solution", ports=[top.I, top.enable, top.net_1447, top.O_0_, top.O_1_, top.O_2_, top.O_3_, top.O_4_, top.O_5_, top.O_6_, top.O_7_, top.success]))
