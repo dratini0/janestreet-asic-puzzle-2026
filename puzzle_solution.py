@@ -14,24 +14,18 @@ class DoneController(wiring.Component):
     minor_index_overflow: In(1)
     enable: In(1)
     enable_gated: Out(1)
-    done: Out(1)
-
-    def __init__(self):
-        self._done = Signal(1, init=0)
-
-        super().__init__()
+    done: Out(1, init=0)
 
     def elaborate(self, platform):
         m = Module()
 
         with m.If(self.enable & self.minor_index_overflow & self.major_index_overflow):
             m.d.sync += [
-                self._done.eq(1),
+                self.done.eq(1),
             ]
 
         m.d.comb += [
-            self.enable_gated.eq(self.enable & ~self._done),
-            self.done.eq(self._done),
+            self.enable_gated.eq(self.enable & ~self.done),
         ]
 
         return m
@@ -39,26 +33,19 @@ class DoneController(wiring.Component):
 class Counter11(wiring.Component):
     enable: In(1)
     increment: In(1)
-    count: Out(4)
+    count: Out(4, init=0)
     overflow: Out(1)
-
-    def __init__(self):
-        self._count = Signal(4, init=0)
-        
-        super().__init__()
 
     def elaborate(self, platform):
         m = Module()
 
-        m.d.comb += self.overflow.eq(self._count == 10)
+        m.d.comb += self.overflow.eq(self.count == 10)
 
         with m.If(self.enable & self.increment):
             with m.If(self.overflow):
-                m.d.sync += self._count.eq(0)
+                m.d.sync += self.count.eq(0)
             with m.Else():
-                m.d.sync += self._count.eq(self._count + 1)
-
-        m.d.comb += self.count.eq(self._count)
+                m.d.sync += self.count.eq(self.count + 1)
 
         return m
 
