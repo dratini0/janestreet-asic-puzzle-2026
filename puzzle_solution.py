@@ -49,26 +49,33 @@ class Counter11(wiring.Component):
 
         return m
 
+class BigAnd(wiring.Component):
+    """
+    A big and over 11 conditions
+
+    Sandgem for Pastoria, and a chunk of Snowpoint for Celestic/Hearthome/Solaceon
+
+    Probably would be nice to absorb into Pastoria and Hearthome when those are done
+    """
+    conditions: In(11)
+    result: Out(1)
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.d.comb += self.result.eq(self.conditions.all())
+
+        return m
+
+
 class Snowpoint(wiring.Component):
     net_934: In(1)
     net_1723: In(1)
     net_1719: In(1)
     I: In(1)
-    net_2480: In(1)
-    net_2475: In(1)
-    net_2416: In(1)
-    net_3283: In(1)
-    net_2474: In(1)
-    net_2471: In(1)
-    net_2393: In(1)
-    net_3830: In(1)
     net_1628: In(1)
     net_1738: In(1)
-    net_2386: In(1)
-    net_2463: In(1)
-    net_2459: In(1)
     net_2259: Out(1)
-    net_2505: Out(1)
 
     def __init__(self):
         self._net_2173 = Signal(1, init=0)
@@ -112,7 +119,6 @@ class Snowpoint(wiring.Component):
 
         m.d.comb += [
             self.net_2259.eq(~(self._net_2256)),
-            self.net_2505.eq(((self.net_3830) & (self.net_2393) & (self.net_2474) & (self.net_2471)) & ((self.net_3283) & (self.net_2416) & (self.net_2480) & (self.net_2475)) & ((self.net_2463) & (self.net_2459) & (self.net_2386))),
         ]
 
         return m
@@ -212,36 +218,6 @@ class Oreburgh(wiring.Component):
             self.net_719.eq((self._net_684) & (self._net_686) & (self._net_612) & (~((self._net_769) | (self._net_919) | ((self._net_1104) | (self._net_802) | (self._net_982))))),
             self.net_1084.eq((~(self._net_686) & ~(self._net_982) & (self._net_919) & (self._net_802)) & (~(self._net_684) & (self._net_1104)) & (self._net_888)),
             self.net_791.eq(~((self._net_684) | (self._net_686) | (self._net_612) | ~(~((self._net_769) | (self._net_919) | ((self._net_1104) | (self._net_802) | (self._net_982)))))),
-        ]
-
-        return m
-
-class Sandgem(wiring.Component):
-    net_204: In(1)
-    net_203: In(1)
-    net_294: In(1)
-    net_226: In(1)
-    net_545: In(1)
-    net_1185: In(1)
-    net_341: In(1)
-    net_401: In(1)
-    net_399: In(1)
-    net_405: In(1)
-    net_349: In(1)
-    net_343: Out(1)
-
-    def __init__(self):
-
-        super().__init__()
-
-    def elaborate(self, platform):
-        m = Module()
-
-        m.d.sync += [
-        ]
-
-        m.d.comb += [
-            self.net_343.eq(((self.net_226) & (self.net_294) & (self.net_204) & (self.net_203)) & ((self.net_349) & (self.net_405) & (self.net_401) & (self.net_399)) & ((self.net_1185) & (self.net_341) & (self.net_545))),
         ]
 
         return m
@@ -1023,11 +999,12 @@ class puzzle(wiring.Component):
         m.submodules.snowpoint = Snowpoint()
         m.submodules.eterna = Eterna()
         m.submodules.oreburgh = Oreburgh()
-        m.submodules.sandgem = Sandgem()
         m.submodules.celestic = Celestic()
         m.submodules.hearthome = Hearthome()
         m.submodules.solaceon = Solaceon()
+        m.submodules.hearthome_big_and = BigAnd()
         m.submodules.pastoria = Pastoria()
+        m.submodules.pastoria_big_and = BigAnd()
         m.submodules.success_controller = SuccessController()
         m.submodules.output_mtcoronet = Output_MtCoronet()
         m.submodules.output_eternaforest = Output_EternaForest()
@@ -1048,19 +1025,8 @@ class puzzle(wiring.Component):
             m.submodules.snowpoint.net_1723.eq(m.submodules.eterna.net_1723),
             m.submodules.snowpoint.net_1719.eq(m.submodules.eterna.net_1719),
             m.submodules.snowpoint.I.eq(self.I),
-            m.submodules.snowpoint.net_2480.eq(m.submodules.hearthome.net_2480),
-            m.submodules.snowpoint.net_2475.eq(m.submodules.hearthome.net_2475),
-            m.submodules.snowpoint.net_2416.eq(m.submodules.solaceon.net_2416),
-            m.submodules.snowpoint.net_3283.eq(m.submodules.hearthome.net_3283),
-            m.submodules.snowpoint.net_2474.eq(m.submodules.hearthome.net_2474),
-            m.submodules.snowpoint.net_2471.eq(m.submodules.hearthome.net_2471),
-            m.submodules.snowpoint.net_2393.eq(m.submodules.hearthome.net_2393),
-            m.submodules.snowpoint.net_3830.eq(m.submodules.hearthome.net_3830),
             m.submodules.snowpoint.net_1628.eq(m.submodules.eterna.net_1628),
             m.submodules.snowpoint.net_1738.eq(m.submodules.eterna.net_1738),
-            m.submodules.snowpoint.net_2386.eq(m.submodules.celestic.net_2386),
-            m.submodules.snowpoint.net_2463.eq(m.submodules.celestic.net_2463),
-            m.submodules.snowpoint.net_2459.eq(m.submodules.celestic.net_2459),
             m.submodules.eterna.net_1526.eq(m.submodules.x_counter.overflow),
             m.submodules.eterna.net_934.eq(m.submodules.done_controller.enable_gated),
             m.submodules.eterna.net_832.eq(m.submodules.x_counter.count[3]),
@@ -1070,17 +1036,6 @@ class puzzle(wiring.Component):
             m.submodules.eterna.I.eq(self.I),
             m.submodules.oreburgh.net_934.eq(m.submodules.done_controller.enable_gated),
             m.submodules.oreburgh.I.eq(self.I),
-            m.submodules.sandgem.net_204.eq(m.submodules.pastoria.net_204),
-            m.submodules.sandgem.net_203.eq(m.submodules.pastoria.net_203),
-            m.submodules.sandgem.net_294.eq(m.submodules.pastoria.net_294),
-            m.submodules.sandgem.net_226.eq(m.submodules.pastoria.net_226),
-            m.submodules.sandgem.net_545.eq(m.submodules.pastoria.net_545),
-            m.submodules.sandgem.net_1185.eq(m.submodules.pastoria.net_1185),
-            m.submodules.sandgem.net_341.eq(m.submodules.pastoria.net_341),
-            m.submodules.sandgem.net_401.eq(m.submodules.pastoria.net_401),
-            m.submodules.sandgem.net_399.eq(m.submodules.pastoria.net_399),
-            m.submodules.sandgem.net_405.eq(m.submodules.pastoria.net_405),
-            m.submodules.sandgem.net_349.eq(m.submodules.pastoria.net_349),
             m.submodules.celestic.net_934.eq(m.submodules.done_controller.enable_gated),
             m.submodules.celestic.I.eq(self.I),
             m.submodules.celestic.net_319.eq(m.submodules.x_counter.count[0]),
@@ -1099,16 +1054,42 @@ class puzzle(wiring.Component):
             m.submodules.solaceon.net_319.eq(m.submodules.x_counter.count[0]),
             m.submodules.solaceon.net_832.eq(m.submodules.x_counter.count[3]),
             m.submodules.solaceon.net_380.eq(m.submodules.x_counter.count[2]),
+            m.submodules.hearthome_big_and.conditions.eq(Cat(
+                m.submodules.hearthome.net_2480,
+                m.submodules.hearthome.net_2475,
+                m.submodules.solaceon.net_2416,
+                m.submodules.hearthome.net_3283,
+                m.submodules.hearthome.net_2474,
+                m.submodules.hearthome.net_2471,
+                m.submodules.hearthome.net_2393,
+                m.submodules.hearthome.net_3830,
+                m.submodules.celestic.net_2386,
+                m.submodules.celestic.net_2463,
+                m.submodules.celestic.net_2459,
+            )),
             m.submodules.pastoria.net_934.eq(m.submodules.done_controller.enable_gated),
             m.submodules.pastoria.I.eq(self.I),
             m.submodules.pastoria.net_736.eq(m.submodules.sunyshore.out[0]),
             m.submodules.pastoria.net_1034.eq(m.submodules.sunyshore.out[3]),
             m.submodules.pastoria.net_857.eq(m.submodules.sunyshore.out[1]),
             m.submodules.pastoria.net_985.eq(m.submodules.sunyshore.out[2]),
+            m.submodules.pastoria_big_and.conditions.eq(Cat(
+                m.submodules.pastoria.net_204,
+                m.submodules.pastoria.net_203,
+                m.submodules.pastoria.net_294,
+                m.submodules.pastoria.net_226,
+                m.submodules.pastoria.net_545,
+                m.submodules.pastoria.net_1185,
+                m.submodules.pastoria.net_341,
+                m.submodules.pastoria.net_401,
+                m.submodules.pastoria.net_399,
+                m.submodules.pastoria.net_405,
+                m.submodules.pastoria.net_349,
+            )),
             m.submodules.success_controller.done.eq(m.submodules.done_controller.done),
             m.submodules.success_controller.snowpoint_property.eq(m.submodules.snowpoint.net_2259),
-            m.submodules.success_controller.hearthome_property.eq(m.submodules.snowpoint.net_2505),
-            m.submodules.success_controller.pastoria_property.eq(m.submodules.sandgem.net_343),
+            m.submodules.success_controller.hearthome_property.eq(m.submodules.hearthome_big_and.result),
+            m.submodules.success_controller.pastoria_property.eq(m.submodules.pastoria_big_and.result),
             m.submodules.success_controller.eterna_property.eq(m.submodules.eterna.net_1557),
             m.submodules.success_controller.oreburgh_property.eq(m.submodules.oreburgh.net_719),
             m.submodules.output_mtcoronet.net_3771.eq(m.submodules.success_controller.done_delayed),
@@ -1210,7 +1191,7 @@ class puzzle(wiring.Component):
             self.net_378.eq(m.submodules.y_counter.count[3]),
             self.net_377.eq(m.submodules.y_counter.count[1]),
             self.net_2259.eq(m.submodules.snowpoint.net_2259),
-            self.net_2505.eq(m.submodules.snowpoint.net_2505),
+            self.net_2505.eq(m.submodules.hearthome_big_and.result),
             self.net_1723.eq(m.submodules.eterna.net_1723),
             self.net_1719.eq(m.submodules.eterna.net_1719),
             self.net_1628.eq(m.submodules.eterna.net_1628),
@@ -1219,7 +1200,7 @@ class puzzle(wiring.Component):
             self.net_719.eq(m.submodules.oreburgh.net_719),
             self.net_1084.eq(m.submodules.oreburgh.net_1084),
             self.net_791.eq(m.submodules.oreburgh.net_791),
-            self.net_343.eq(m.submodules.sandgem.net_343),
+            self.net_343.eq(m.submodules.pastoria_big_and.result),
             self.net_2386.eq(m.submodules.celestic.net_2386),
             self.net_2463.eq(m.submodules.celestic.net_2463),
             self.net_2459.eq(m.submodules.celestic.net_2459),
