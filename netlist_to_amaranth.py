@@ -869,15 +869,18 @@ def generate_amaranth(in_: Path, out: Path, enable_lumping=True):
             gate.output_netname
             for gate in top.gates.values()
             if gate.typename == "custom__input"
-        ] + list(top.outputs.keys())
+        ] + list(net_to_lump.keys())
 
         f.write(
             'if __name__ == "__main__":\n'
             "    from amaranth.back import verilog\n"
             f"    top = {top.name}()\n"
             '    with open(argv[1], "wt") as f:\n'
-            f'        f.write(verilog.convert(top, name="{top.name}_amaranth", ports=[{", ".join(f"top.{port}" for port in ports)}]))\n'
+            f'        f.write(verilog.convert(top, name="{top.name}_amaranth", ports=[\n'
         )
+        for port in ports:
+            f.write(f"            top.{port},\n")
+        f.write("        ]))\n")
 
 
 def debug_lumps(in_: Path):
