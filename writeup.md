@@ -119,6 +119,10 @@
     * When both Jubilife and Twinleaf overflow, done is set (therefore, exactly after 121 bits, as I have noticed before)
     * Veilstone blanks out O[7:0] under some conditions, but I haven't figured out the conditions yet.
     * Not starting to edit the file yet, until I have figured out a bit better formatting and logic minimization (because I don't feel like dealing with 30k character lines, not gonna lie!)
+4. Made it reuse the expressions for high-fanout nets, cutting down on crazy long expressions
+5. Started working on the solution, using git merge to merge in changes from the generated version. Now I can't really rebase.
+6. Made some progress on Sunyshore, but I only know that it's not commutative so far
+7. Maybe I should focus on Solaceon, Eterna, Celestic and Hearthome, in this order of complexity. They all seem to take the minor count, input and the gated enable signal.
 
 # Register of Easter Eggs
 * Jane Street logo on met2 (I suppose it's an easter egg, since it wasn't in the PNG, but not exactly a major achievement to find it)
