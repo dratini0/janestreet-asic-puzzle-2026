@@ -124,5 +124,13 @@
 6. Made some progress on Sunyshore, but I only know that it's not commutative so far
 7. Maybe I should focus on Solaceon, Eterna, Celestic and Hearthome, in this order of complexity. They all seem to take the minor count, input and the gated enable signal.
 
+# Day 9
+
+1. I have craked Sunyshore - it's an image.
+    * It also strongly implies that the solution is an image, scanned left-to-right, then top to bottom.
+        * Renaming the counters now.
+    * Interestingly the values in the image seem to range from 0 to 10 - much like the coordinates that index said image
+
 # Register of Easter Eggs
 * Jane Street logo on met2 (I suppose it's an easter egg, since it wasn't in the PNG, but not exactly a major achievement to find it)
+* JSC image used for the Sunyshore module - though this may be actually shaping the solution via Pastoria, I don't know.

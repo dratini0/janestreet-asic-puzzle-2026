@@ -1,4 +1,4 @@
-from faulthandler import enable
+from itertools import chain
 from sys import argv
 
 from amaranth import *
@@ -868,119 +868,42 @@ class Output_LakeValor(wiring.Component):
         return m
 
 class Sunyshore(wiring.Component):
-    minor_count: In(4)
-    major_count: In(4)
-    net_736: Out(1)
-    net_1034: Out(1)
-    net_857: Out(1)
-    net_985: Out(1)
+    """
+    Represents an image with the letters JSC written across it
 
-    def __init__(self):
-        self._net_23 = Signal(1)
-        self._net_103 = Signal(1)
-        self._net_179 = Signal(1)
-        self._net_43 = Signal(1)
-        self._net_109 = Signal(1)
-        self._net_25 = Signal(1)
-        self._net_561 = Signal(1)
-        self._net_40 = Signal(1)
-        self._net_102 = Signal(1)
-        self._net_39 = Signal(1)
-        self._net_494 = Signal(1)
-        self._net_270 = Signal(1)
-        self._net_510 = Signal(1)
-        self._net_574 = Signal(1)
-        self._net_523 = Signal(1)
-        self._net_56 = Signal(1)
-        self._net_536 = Signal(1)
-        self._net_15 = Signal(1)
-        self._net_704 = Signal(1)
-        self._net_775 = Signal(1)
-        self._net_823 = Signal(1)
-        self._net_565 = Signal(1)
-        self._net_659 = Signal(1)
-        self._net_773 = Signal(1)
-        self._net_772 = Signal(1)
-        self._net_45 = Signal(1)
-        self._net_606 = Signal(1)
-        self._net_21 = Signal(1)
-        self._net_151 = Signal(1)
-        self._net_58 = Signal(1)
-        self._net_17 = Signal(1)
-        self._net_99 = Signal(1)
-        self._net_42 = Signal(1)
-        self._net_16 = Signal(1)
-        self._net_61 = Signal(1)
-        self._net_14 = Signal(1)
-        self._net_137 = Signal(1)
-        self._net_53 = Signal(1)
-        self._net_59 = Signal(1)
-        self._net_51 = Signal(1)
-        self._net_38 = Signal(1)
-        self._net_240 = Signal(1)
-        self._net_145 = Signal(1)
-        self._net_122 = Signal(1)
+    JSC presumably stands for Jane Street Capital
 
-        super().__init__()
+    This permutation of bits was chosen because:
+    * The letters J, S and C, correspond nicely to values 0, 1 and 2
+    * The maximum value of the image is 10, much like the counters
+    """
+    x: In(4)
+    y: In(4)
+    out: Out(4)
+
+    IMAGE = (
+        (6, 6, 6, 6, 6, 8, 8, 5, 4, 4, 9),
+        (6, 6, 0, 6, 6, 8, 5, 5, 4, 4, 9),
+        (6, 6, 0, 8, 8, 8, 8, 5, 5, 4, 9),
+        (6, 6, 0, 8, 1, 1, 1, 9, 5, 5, 9),
+        (0, 6, 0, 8, 1, 9, 9, 9, 9, 9, 9),
+        (0, 0, 0, 8, 1, 1, 1, 9, 2, 2, 2),
+        (8, 8, 8, 8, 8, 8, 1, 9, 2, 10, 10),
+        (8, 7, 7, 7, 1, 1, 1, 9, 2, 10, 10),
+        (8, 7, 7, 3, 9, 9, 9, 9, 2, 10, 10),
+        (8, 8, 7, 3, 3, 9, 9, 9, 2, 2, 2),
+        (8, 7, 7, 3, 9, 9, 9, 9, 9, 9, 9),
+    )
 
     def elaborate(self, platform):
         m = Module()
 
-        m.d.comb += [
-            self._net_23.eq((self._net_270) ^ (~((self._net_659) ^ (self._net_565)))),
-            self._net_103.eq(~((self._net_58) & (self._net_38))),
-            self._net_179.eq(~((self._net_53) | (self._net_14))),
-            self._net_43.eq(~((self._net_25) & (self._net_15))),
-            self._net_109.eq(~((self._net_58) & (self._net_42))),
-            self._net_25.eq(~((self._net_270) ^ (~((self._net_659) ^ (self._net_565))))),
-            self._net_561.eq(((((((self._net_270) & (~((self._net_659) & (self._net_565)))) | (~((self._net_659) | (self._net_565))))) & (~((~(((~(~(self._net_606) & ((self.major_count[3]) ^ (self._net_510)))) & (~((self.minor_count[3]) & (~((self._net_606) ^ ((self.major_count[3]) ^ (self._net_510))))))) | ((~((self.major_count[1]) | (self._net_523))) | (self._net_574) | ((~((self.major_count[0]) & (self.major_count[2]))) & (self._net_523) & (~((self.major_count[1]) ^ (self.major_count[3]))))))) | ((~(~(self._net_606) & ((self.major_count[3]) ^ (self._net_510)))) & (~((self.minor_count[3]) & (~((self._net_606) ^ ((self.major_count[3]) ^ (self._net_510)))))) & ((~((self.major_count[1]) | (self._net_523))) | (self._net_574) | ((~((self.major_count[0]) & (self.major_count[2]))) & (self._net_523) & (~((self.major_count[1]) ^ (self.major_count[3]))))))))) | (~(((~(~(self._net_606) & ((self.major_count[3]) ^ (self._net_510)))) & (~((self.minor_count[3]) & (~((self._net_606) ^ ((self.major_count[3]) ^ (self._net_510))))))) | ((~((self.major_count[1]) | (self._net_523))) | (self._net_574) | ((~((self.major_count[0]) & (self.major_count[2]))) & (self._net_523) & (~((self.major_count[1]) ^ (self.major_count[3]))))))))),
-            self._net_40.eq(~((self._net_25) | (self._net_179))),
-            self._net_102.eq(~((self._net_561) ^ (~(~(self.major_count[0]) & ~(self.major_count[1]) & (self.major_count[2]) & (self.major_count[3])) & (~(((self.major_count[1]) | (self._net_523)) & ((~(((self.major_count[1]) & (self.major_count[3])) | (self.major_count[2]))) | ((((self.major_count[1]) & (self.major_count[2]) & (self.major_count[3])) | (self._net_574))))))))),
-            self._net_39.eq(((((self._net_270) & (~((self._net_659) & (self._net_565)))) | (~((self._net_659) | (self._net_565))))) ^ (~((~(((~(~(self._net_606) & ((self.major_count[3]) ^ (self._net_510)))) & (~((self.minor_count[3]) & (~((self._net_606) ^ ((self.major_count[3]) ^ (self._net_510))))))) | ((~((self.major_count[1]) | (self._net_523))) | (self._net_574) | ((~((self.major_count[0]) & (self.major_count[2]))) & (self._net_523) & (~((self.major_count[1]) ^ (self.major_count[3]))))))) | ((~(~(self._net_606) & ((self.major_count[3]) ^ (self._net_510)))) & (~((self.minor_count[3]) & (~((self._net_606) ^ ((self.major_count[3]) ^ (self._net_510)))))) & ((~((self.major_count[1]) | (self._net_523))) | (self._net_574) | ((~((self.major_count[0]) & (self.major_count[2]))) & (self._net_523) & (~((self.major_count[1]) ^ (self.major_count[3]))))))))),
-            self._net_494.eq((self._net_25) & (self._net_53) & (self._net_59)),
-            self._net_270.eq((((self.minor_count[1]) & (self._net_51) & ((self.minor_count[2]) ^ (~(((self.major_count[1]) & (self._net_510)) | (~((self.major_count[1]) | (self.major_count[2]))))))) | ((self._net_58) & (self._net_151)))),
-            self._net_510.eq((self.major_count[0]) ^ (self.major_count[2])),
-            self._net_574.eq(~((~((self.major_count[0]) & (self.major_count[2]))) | (~((self.major_count[1]) ^ (self.major_count[3]))))),
-            self._net_523.eq(~((self.major_count[3]) & (self._net_510))),
-            self._net_56.eq(~((self._net_240) | (~((self._net_145) & (~((self.minor_count[0]) & (self.major_count[0]))))))),
-            self._net_536.eq((self._net_561) ^ (~(~(self.major_count[0]) & ~(self.major_count[1]) & (self.major_count[2]) & (self.major_count[3])) & (~(((self.major_count[1]) | (self._net_523)) & ((~(((self.major_count[1]) & (self.major_count[3])) | (self.major_count[2]))) | ((((self.major_count[1]) & (self.major_count[2]) & (self.major_count[3])) | (self._net_574)))))))),
-            self._net_15.eq(~((self._net_53) & (self._net_14))),
-            self._net_704.eq((self._net_772) ^ (self._net_773)),
-            self._net_775.eq(~((~((self._net_772) | (self._net_773))) | ((((self.major_count[0]) | (self.major_count[1])) & (self.major_count[2]) & (self.major_count[3]))))),
-            self._net_823.eq(~((self._net_772) ^ (self._net_773))),
-            self._net_565.eq((~((self.minor_count[2]) & (~(((self.major_count[1]) & (self._net_510)) | (~((self.major_count[1]) | (self.major_count[2])))))) & ((~((self.major_count[0]) & (self.major_count[1]))) | (self.major_count[2])))),
-            self._net_659.eq(~((self.minor_count[3]) ^ (~((self._net_606) ^ ((self.major_count[3]) ^ (self._net_510)))))),
-            self._net_773.eq((((self._net_606) & (self._net_574)) | (~(((self.major_count[3]) & (self._net_606)) | (self._net_574))))),
-            self._net_772.eq(~(((self._net_561) & (~(((self.major_count[1]) | (self._net_523)) & ((~(((self.major_count[1]) & (self.major_count[3])) | (self.major_count[2]))) | ((((self.major_count[1]) & (self.major_count[2]) & (self.major_count[3])) | (self._net_574))))))) | (~(self.major_count[0]) & ~(self.major_count[1]) & (self.major_count[2]) & (self.major_count[3])))),
-            self._net_45.eq((self._net_99) | (self._net_38)),
-            self._net_606.eq(~((self.major_count[1]) & (self.major_count[2]))),
-            self._net_21.eq(~((self._net_122) & (self._net_53))),
-            self._net_151.eq(~((self._net_145) | (~((self.minor_count[0]) & (self.major_count[0]))))),
-            self._net_58.eq(~((~((self.minor_count[1]) & (self._net_51))) ^ ((self.minor_count[2]) ^ (~(((self.major_count[1]) & (self._net_510)) | (~((self.major_count[1]) | (self.major_count[2])))))))),
-            self._net_17.eq((self._net_25) | (self._net_45)),
-            self._net_99.eq((self._net_58) ^ (self._net_151)),
-            self._net_42.eq(~((self._net_145) | (self._net_122))),
-            self._net_16.eq((self._net_99) | (self._net_14)),
-            self._net_61.eq((self._net_42) | (self._net_53) | (self._net_14)),
-            self._net_14.eq(~((~(((self.minor_count[0]) & (self.major_count[0])) | (self._net_240))) | (self._net_38))),
-            self._net_137.eq(~((self._net_53) | (self._net_56))),
-            self._net_53.eq(~((self._net_58) ^ (self._net_151))),
-            self._net_59.eq((self._net_122) & (self._net_38)),
-            self._net_51.eq((self.major_count[0]) ^ (self.major_count[1])),
-            self._net_38.eq(~(self._net_151) & (~((self._net_145) & (~((self.minor_count[0]) & (self.major_count[0])))))),
-            self._net_240.eq(~((self.minor_count[0]) | (self.major_count[0]))),
-            self._net_145.eq(~((self.minor_count[1]) ^ (self._net_51))),
-            self._net_122.eq(((self.minor_count[0]) & (self.major_count[0])) | (self._net_240)),
-        ]
-
-        m.d.sync += [
-        ]
+        m.submodules.rom = Memory(width=4, depth=256, init=list(chain.from_iterable(self.IMAGE)))
+        rd_port = m.submodules.rom.read_port(domain="comb")
 
         m.d.comb += [
-            self.net_736.eq(((((((~((self._net_109) | (self._net_25))) | (self._net_39) | (self._net_494)) & (self._net_102) & (~((self._net_39) & (Mux((self._net_23), ((self._net_42) | (self._net_14) | (self._net_137)), (self._net_61))))))) | ((((self._net_536) & ((((self._net_53) & ((self._net_25) | (self._net_14))) | (~(~(((self._net_23) & (self._net_179)) | (self._net_39)))))) & (~((self._net_39) & (~(((self._net_42) | (self._net_23) | (self._net_99)) & (self._net_109)))))) | (self._net_704)))) & (self._net_775) & ((self._net_823) | ((((~((self._net_39) & (self._net_43))) | (self._net_40)) & (self._net_102) & ((self._net_39) | (~((self._net_23) | (self._net_103))) | (~((self._net_23) | (self._net_45)))))) | (~(((~((self._net_39) & (self._net_43))) & ((self._net_39) | (self._net_40) | ((((self._net_42) | (self._net_99)) & (self._net_25) & (self._net_109))))) | (self._net_102)))))),
-            self.net_1034.eq((((self._net_704) | (Mux((self._net_536), (Mux((self._net_39), ((((self._net_23) & (self._net_103) & (self._net_21)) | (self._net_59))), ((((self._net_42) | (self._net_43)) & ((self._net_25) | (self._net_14)))))), ((((self._net_39) | (self._net_494) | (~((self._net_25) | (self._net_61)))) & ((~((self._net_179) | (self._net_43))) | (~(((self._net_25) | (self._net_137) | (~(self._net_16))) & (self._net_39))))))))) & ((((self._net_536) & ((((self._net_39) & (self._net_43) & (self._net_17)) | (((((self._net_23) | (~(~(self._net_59) & (self._net_45)))) & ((self._net_17) | (~(((self.minor_count[0]) & (self.major_count[0])) | (self._net_240)))))) & (~(((self._net_23) & (self._net_179)) | (self._net_39))))))) | ((((self._net_137) | (~(((self._net_23) | (~(self._net_16))) & (self._net_39)))) & (((((self._net_23) | ((self._net_103) & (self._net_21))) & (self._net_17))) | (self._net_39)) & (self._net_102))) | (self._net_823))) & (self._net_775))),
-            self.net_857.eq((((self._net_704) | ((((self._net_536) & ((((self._net_39) & (~((self._net_109) | (self._net_23)))) | (~((((self._net_25) & (~((self._net_58) & (self._net_56)))) | ((((self._net_42) | (self._net_16)) & (self._net_23))) | (self._net_39))))))) | ((self._net_102) & ((((self._net_58) & (self._net_39) & (self._net_38)) | (self._net_40) | ((self._net_25) & (~(self._net_56)) & (self._net_21)))) & (~(((self._net_40) | ((self._net_25) & (~(self._net_56)) & (self._net_21))) & (self._net_39))))))) & (~(((self._net_536) | (Mux((self._net_39), ((((self._net_15) & (self._net_40)) | ((self._net_16) & (self._net_25)))), ((~((self._net_23) | (self._net_45))) | ((((self._net_23) | (self._net_56)) & (self._net_45))))))) & ((((self._net_39) & (self._net_45)) | (Mux((~(~(self._net_59) & (self._net_45))), (self._net_25), (self._net_40))) | (self._net_102))) & (self._net_704))) & (self._net_775))),
-            self.net_985.eq((((self._net_704) | (~(((self._net_536) | ((((self._net_39) | (self._net_494) | (~(((self._net_25) & (self._net_59)) | (self._net_61)))) & ((~(((self._net_25) | (self._net_137) | (~(self._net_16))) & (self._net_39))) | (~((self._net_23) | (self._net_179))))))) & ((self._net_39) | (self._net_102) | ((self._net_42) | (self._net_14) | (self._net_137)) | ((((self._net_42) | (self._net_16)) & (self._net_23))))))) & ((((self._net_39) & (~(((self._net_25) | (self._net_15)) & (((self._net_42) | (self._net_23) | (self._net_16)) | (self._net_536))))) | (((self._net_536) | (~((self._net_23) | (self._net_103)))) & (~(((self._net_536) & ((((self._net_25) | (~((self._net_58) & (self._net_56)))) & ~(~((self._net_109) | (self._net_23)))))) | (self._net_39)))) | (self._net_823))) & (self._net_775))),
+            rd_port.addr.eq(11 * self.y + self.x), # Yes, this is specifically how it's implemented, you can tell from the artifacts it generates with out-of-range inputs!
+            self.out.eq(rd_port.data),
         ]
 
         return m
@@ -1187,10 +1110,10 @@ class puzzle(wiring.Component):
             m.submodules.solaceon.net_380.eq(m.submodules.minor_counter.count[2]),
             m.submodules.pastoria.net_934.eq(m.submodules.done_controller.enable_gated),
             m.submodules.pastoria.I.eq(self.I),
-            m.submodules.pastoria.net_736.eq(m.submodules.sunyshore.net_736),
-            m.submodules.pastoria.net_1034.eq(m.submodules.sunyshore.net_1034),
-            m.submodules.pastoria.net_857.eq(m.submodules.sunyshore.net_857),
-            m.submodules.pastoria.net_985.eq(m.submodules.sunyshore.net_985),
+            m.submodules.pastoria.net_736.eq(m.submodules.sunyshore.out[0]),
+            m.submodules.pastoria.net_1034.eq(m.submodules.sunyshore.out[3]),
+            m.submodules.pastoria.net_857.eq(m.submodules.sunyshore.out[1]),
+            m.submodules.pastoria.net_985.eq(m.submodules.sunyshore.out[2]),
             m.submodules.veilstone.net_2259.eq(m.submodules.snowpoint.net_2259),
             m.submodules.veilstone.net_3136.eq(m.submodules.done_controller.done),
             m.submodules.veilstone.net_2505.eq(m.submodules.snowpoint.net_2505),
@@ -1265,8 +1188,8 @@ class puzzle(wiring.Component):
             m.submodules.output_lakevalor.net_1505.eq(m.submodules.output_mtcoronet.net_1505),
             m.submodules.output_lakevalor.net_1363.eq(m.submodules.output_mtcoronet.net_1363),
             m.submodules.output_lakevalor.net_1447.eq(self.net_1447),
-            m.submodules.sunyshore.minor_count.eq(m.submodules.minor_counter.count),
-            m.submodules.sunyshore.major_count.eq(m.submodules.major_counter.count),
+            m.submodules.sunyshore.x.eq(m.submodules.minor_counter.count),
+            m.submodules.sunyshore.y.eq(m.submodules.major_counter.count),
         ]
 
         m.d.comb += [
@@ -1378,10 +1301,10 @@ class puzzle(wiring.Component):
             self.net_1559.eq(m.submodules.output_lakevalor.net_1559),
             self.net_1629.eq(m.submodules.output_lakevalor.net_1629),
             self.net_1472.eq(m.submodules.output_lakevalor.net_1472),
-            self.net_736.eq(m.submodules.sunyshore.net_736),
-            self.net_1034.eq(m.submodules.sunyshore.net_1034),
-            self.net_857.eq(m.submodules.sunyshore.net_857),
-            self.net_985.eq(m.submodules.sunyshore.net_985),
+            self.net_736.eq(m.submodules.sunyshore.out[0]),
+            self.net_1034.eq(m.submodules.sunyshore.out[3]),
+            self.net_857.eq(m.submodules.sunyshore.out[1]),
+            self.net_985.eq(m.submodules.sunyshore.out[2]),
         ]
 
         return m
