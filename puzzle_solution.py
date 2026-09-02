@@ -10,8 +10,8 @@ def Buf(expr):
     return expr
 
 class DoneController(wiring.Component):
-    major_index_overflow: In(1)
-    minor_index_overflow: In(1)
+    y_overflow: In(1)
+    x_overflow: In(1)
     enable: In(1)
     enable_gated: Out(1)
     done: Out(1, init=0)
@@ -19,7 +19,7 @@ class DoneController(wiring.Component):
     def elaborate(self, platform):
         m = Module()
 
-        with m.If(self.enable & self.minor_index_overflow & self.major_index_overflow):
+        with m.If(self.enable & self.x_overflow & self.y_overflow):
             m.d.sync += [
                 self.done.eq(1),
             ]
@@ -1018,8 +1018,8 @@ class puzzle(wiring.Component):
         m = Module()
 
         m.submodules.done_controller = DoneController()
-        m.submodules.minor_counter = Counter11()
-        m.submodules.major_counter = Counter11()
+        m.submodules.x_counter = Counter11()
+        m.submodules.y_counter = Counter11()
         m.submodules.snowpoint = Snowpoint()
         m.submodules.eterna = Eterna()
         m.submodules.oreburgh = Oreburgh()
@@ -1037,13 +1037,13 @@ class puzzle(wiring.Component):
         m.submodules.sunyshore = Sunyshore()
 
         m.d.comb += [
-            m.submodules.done_controller.major_index_overflow.eq(m.submodules.major_counter.overflow),
-            m.submodules.done_controller.minor_index_overflow.eq(m.submodules.minor_counter.overflow),
+            m.submodules.done_controller.y_overflow.eq(m.submodules.y_counter.overflow),
+            m.submodules.done_controller.x_overflow.eq(m.submodules.x_counter.overflow),
             m.submodules.done_controller.enable.eq(self.enable),
-            m.submodules.minor_counter.enable.eq(m.submodules.done_controller.enable_gated),
-            m.submodules.minor_counter.increment.eq(1),
-            m.submodules.major_counter.enable.eq(m.submodules.done_controller.enable_gated),
-            m.submodules.major_counter.increment.eq(m.submodules.minor_counter.overflow),
+            m.submodules.x_counter.enable.eq(m.submodules.done_controller.enable_gated),
+            m.submodules.x_counter.increment.eq(1),
+            m.submodules.y_counter.enable.eq(m.submodules.done_controller.enable_gated),
+            m.submodules.y_counter.increment.eq(m.submodules.x_counter.overflow),
             m.submodules.snowpoint.net_934.eq(m.submodules.done_controller.enable_gated),
             m.submodules.snowpoint.net_1723.eq(m.submodules.eterna.net_1723),
             m.submodules.snowpoint.net_1719.eq(m.submodules.eterna.net_1719),
@@ -1061,12 +1061,12 @@ class puzzle(wiring.Component):
             m.submodules.snowpoint.net_2386.eq(m.submodules.celestic.net_2386),
             m.submodules.snowpoint.net_2463.eq(m.submodules.celestic.net_2463),
             m.submodules.snowpoint.net_2459.eq(m.submodules.celestic.net_2459),
-            m.submodules.eterna.net_1526.eq(m.submodules.minor_counter.overflow),
+            m.submodules.eterna.net_1526.eq(m.submodules.x_counter.overflow),
             m.submodules.eterna.net_934.eq(m.submodules.done_controller.enable_gated),
-            m.submodules.eterna.net_832.eq(m.submodules.minor_counter.count[3]),
-            m.submodules.eterna.net_20.eq(m.submodules.minor_counter.count[1]),
-            m.submodules.eterna.net_380.eq(m.submodules.minor_counter.count[2]),
-            m.submodules.eterna.net_319.eq(m.submodules.minor_counter.count[0]),
+            m.submodules.eterna.net_832.eq(m.submodules.x_counter.count[3]),
+            m.submodules.eterna.net_20.eq(m.submodules.x_counter.count[1]),
+            m.submodules.eterna.net_380.eq(m.submodules.x_counter.count[2]),
+            m.submodules.eterna.net_319.eq(m.submodules.x_counter.count[0]),
             m.submodules.eterna.I.eq(self.I),
             m.submodules.oreburgh.net_934.eq(m.submodules.done_controller.enable_gated),
             m.submodules.oreburgh.I.eq(self.I),
@@ -1083,22 +1083,22 @@ class puzzle(wiring.Component):
             m.submodules.sandgem.net_349.eq(m.submodules.pastoria.net_349),
             m.submodules.celestic.net_934.eq(m.submodules.done_controller.enable_gated),
             m.submodules.celestic.I.eq(self.I),
-            m.submodules.celestic.net_319.eq(m.submodules.minor_counter.count[0]),
-            m.submodules.celestic.net_832.eq(m.submodules.minor_counter.count[3]),
-            m.submodules.celestic.net_20.eq(m.submodules.minor_counter.count[1]),
-            m.submodules.celestic.net_380.eq(m.submodules.minor_counter.count[2]),
+            m.submodules.celestic.net_319.eq(m.submodules.x_counter.count[0]),
+            m.submodules.celestic.net_832.eq(m.submodules.x_counter.count[3]),
+            m.submodules.celestic.net_20.eq(m.submodules.x_counter.count[1]),
+            m.submodules.celestic.net_380.eq(m.submodules.x_counter.count[2]),
             m.submodules.hearthome.net_934.eq(m.submodules.done_controller.enable_gated),
             m.submodules.hearthome.I.eq(self.I),
-            m.submodules.hearthome.net_20.eq(m.submodules.minor_counter.count[1]),
-            m.submodules.hearthome.net_319.eq(m.submodules.minor_counter.count[0]),
-            m.submodules.hearthome.net_380.eq(m.submodules.minor_counter.count[2]),
-            m.submodules.hearthome.net_832.eq(m.submodules.minor_counter.count[3]),
+            m.submodules.hearthome.net_20.eq(m.submodules.x_counter.count[1]),
+            m.submodules.hearthome.net_319.eq(m.submodules.x_counter.count[0]),
+            m.submodules.hearthome.net_380.eq(m.submodules.x_counter.count[2]),
+            m.submodules.hearthome.net_832.eq(m.submodules.x_counter.count[3]),
             m.submodules.solaceon.net_934.eq(m.submodules.done_controller.enable_gated),
             m.submodules.solaceon.I.eq(self.I),
-            m.submodules.solaceon.net_20.eq(m.submodules.minor_counter.count[1]),
-            m.submodules.solaceon.net_319.eq(m.submodules.minor_counter.count[0]),
-            m.submodules.solaceon.net_832.eq(m.submodules.minor_counter.count[3]),
-            m.submodules.solaceon.net_380.eq(m.submodules.minor_counter.count[2]),
+            m.submodules.solaceon.net_20.eq(m.submodules.x_counter.count[1]),
+            m.submodules.solaceon.net_319.eq(m.submodules.x_counter.count[0]),
+            m.submodules.solaceon.net_832.eq(m.submodules.x_counter.count[3]),
+            m.submodules.solaceon.net_380.eq(m.submodules.x_counter.count[2]),
             m.submodules.pastoria.net_934.eq(m.submodules.done_controller.enable_gated),
             m.submodules.pastoria.I.eq(self.I),
             m.submodules.pastoria.net_736.eq(m.submodules.sunyshore.out[0]),
@@ -1179,8 +1179,8 @@ class puzzle(wiring.Component):
             m.submodules.output_lakevalor.net_1505.eq(m.submodules.output_mtcoronet.net_1505),
             m.submodules.output_lakevalor.net_1363.eq(m.submodules.output_mtcoronet.net_1363),
             m.submodules.output_lakevalor.net_1447.eq(self.net_1447),
-            m.submodules.sunyshore.x.eq(m.submodules.minor_counter.count),
-            m.submodules.sunyshore.y.eq(m.submodules.major_counter.count),
+            m.submodules.sunyshore.x.eq(m.submodules.x_counter.count),
+            m.submodules.sunyshore.y.eq(m.submodules.y_counter.count),
         ]
 
         m.d.comb += [
@@ -1199,16 +1199,16 @@ class puzzle(wiring.Component):
         m.d.comb += [
             self.net_934.eq(m.submodules.done_controller.enable_gated),
             self.net_3136.eq(m.submodules.done_controller.done),
-            self.net_1526.eq(m.submodules.minor_counter.overflow),
-            self.net_832.eq(m.submodules.minor_counter.count[3]),
-            self.net_20.eq(m.submodules.minor_counter.count[1]),
-            self.net_380.eq(m.submodules.minor_counter.count[2]),
-            self.net_319.eq(m.submodules.minor_counter.count[0]),
-            self.net_1508.eq(m.submodules.major_counter.overflow),
-            self.net_435.eq(m.submodules.major_counter.count[2]),
-            self.net_323.eq(m.submodules.major_counter.count[0]),
-            self.net_378.eq(m.submodules.major_counter.count[3]),
-            self.net_377.eq(m.submodules.major_counter.count[1]),
+            self.net_1526.eq(m.submodules.x_counter.overflow),
+            self.net_832.eq(m.submodules.x_counter.count[3]),
+            self.net_20.eq(m.submodules.x_counter.count[1]),
+            self.net_380.eq(m.submodules.x_counter.count[2]),
+            self.net_319.eq(m.submodules.x_counter.count[0]),
+            self.net_1508.eq(m.submodules.y_counter.overflow),
+            self.net_435.eq(m.submodules.y_counter.count[2]),
+            self.net_323.eq(m.submodules.y_counter.count[0]),
+            self.net_378.eq(m.submodules.y_counter.count[3]),
+            self.net_377.eq(m.submodules.y_counter.count[1]),
             self.net_2259.eq(m.submodules.snowpoint.net_2259),
             self.net_2505.eq(m.submodules.snowpoint.net_2505),
             self.net_1723.eq(m.submodules.eterna.net_1723),
