@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 
-from matplotlib.ticker import MultipleLocator
 import io
 import json
 import re
@@ -11,6 +10,8 @@ from dataclasses import dataclass
 from itertools import chain, groupby
 from pathlib import Path
 from typing import Self, TypedDict, cast
+
+from matplotlib.ticker import MultipleLocator
 
 OUTPUT_PINS = {"X", "Y", "Q", "HI", "LO"}
 
