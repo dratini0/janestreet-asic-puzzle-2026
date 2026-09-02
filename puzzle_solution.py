@@ -8,28 +8,29 @@ from amaranth.lib.wiring import In, Out
 def Buf(expr):
     return expr
 
-class Floaroma(wiring.Component):
-    net_1508: In(1)
-    net_1526: In(1)
+class DoneController(wiring.Component):
+    major_index_overflow: In(1)
+    minor_index_overflow: In(1)
     enable: In(1)
-    net_934: Out(1)
-    net_3136: Out(1)
+    enable_gated: Out(1)
+    done: Out(1)
 
     def __init__(self):
-        self._net_3136 = Signal(1, init=0)
+        self._done = Signal(1, init=0)
 
         super().__init__()
 
     def elaborate(self, platform):
         m = Module()
 
-        m.d.sync += [
-            self._net_3136.eq((((self.net_1526) & (self.net_1508) & (~(self._net_3136) & (self.enable))) | (self._net_3136))),
-        ]
+        with m.If(self.enable & self.minor_index_overflow & self.major_index_overflow):
+            m.d.sync += [
+                self._done.eq(1),
+            ]
 
         m.d.comb += [
-            self.net_934.eq(~(self._net_3136) & (self.enable)),
-            self.net_3136.eq(self._net_3136),
+            self.enable_gated.eq(self.enable & ~self._done),
+            self.done.eq(self._done),
         ]
 
         return m
@@ -1077,10 +1078,15 @@ class puzzle(wiring.Component):
     O_7_: Out(1)
     success: Out(1)
 
+    def __init__(self):
+        self.net_934 = Signal()
+        self.net_3136 = Signal()
+        super().__init__()
+
     def elaborate(self, platform):
         m = Module()
 
-        m.submodules.floaroma = Floaroma()
+        m.submodules.done_controller = DoneController()
         m.submodules.jubilife = Jubilife()
         m.submodules.twinleaf = Twinleaf()
         m.submodules.snowpoint = Snowpoint()
@@ -1100,13 +1106,13 @@ class puzzle(wiring.Component):
         m.submodules.sunyshore = Sunyshore()
 
         m.d.comb += [
-            m.submodules.floaroma.net_1508.eq(m.submodules.twinleaf.net_1508),
-            m.submodules.floaroma.net_1526.eq(m.submodules.jubilife.net_1526),
-            m.submodules.floaroma.enable.eq(self.enable),
-            m.submodules.jubilife.net_934.eq(m.submodules.floaroma.net_934),
-            m.submodules.twinleaf.net_934.eq(m.submodules.floaroma.net_934),
+            m.submodules.done_controller.major_index_overflow.eq(m.submodules.twinleaf.net_1508),
+            m.submodules.done_controller.minor_index_overflow.eq(m.submodules.jubilife.net_1526),
+            m.submodules.done_controller.enable.eq(self.enable),
+            m.submodules.jubilife.net_934.eq(m.submodules.done_controller.enable_gated),
+            m.submodules.twinleaf.net_934.eq(m.submodules.done_controller.enable_gated),
             m.submodules.twinleaf.net_1526.eq(m.submodules.jubilife.net_1526),
-            m.submodules.snowpoint.net_934.eq(m.submodules.floaroma.net_934),
+            m.submodules.snowpoint.net_934.eq(m.submodules.done_controller.enable_gated),
             m.submodules.snowpoint.net_1723.eq(m.submodules.eterna.net_1723),
             m.submodules.snowpoint.net_1719.eq(m.submodules.eterna.net_1719),
             m.submodules.snowpoint.I.eq(self.I),
@@ -1124,13 +1130,13 @@ class puzzle(wiring.Component):
             m.submodules.snowpoint.net_2463.eq(m.submodules.celestic.net_2463),
             m.submodules.snowpoint.net_2459.eq(m.submodules.celestic.net_2459),
             m.submodules.eterna.net_1526.eq(m.submodules.jubilife.net_1526),
-            m.submodules.eterna.net_934.eq(m.submodules.floaroma.net_934),
+            m.submodules.eterna.net_934.eq(m.submodules.done_controller.enable_gated),
             m.submodules.eterna.net_832.eq(m.submodules.jubilife.net_832),
             m.submodules.eterna.net_20.eq(m.submodules.jubilife.net_20),
             m.submodules.eterna.net_380.eq(m.submodules.jubilife.net_380),
             m.submodules.eterna.net_319.eq(m.submodules.jubilife.net_319),
             m.submodules.eterna.I.eq(self.I),
-            m.submodules.oreburgh.net_934.eq(m.submodules.floaroma.net_934),
+            m.submodules.oreburgh.net_934.eq(m.submodules.done_controller.enable_gated),
             m.submodules.oreburgh.I.eq(self.I),
             m.submodules.sandgem.net_204.eq(m.submodules.pastoria.net_204),
             m.submodules.sandgem.net_203.eq(m.submodules.pastoria.net_203),
@@ -1143,32 +1149,32 @@ class puzzle(wiring.Component):
             m.submodules.sandgem.net_399.eq(m.submodules.pastoria.net_399),
             m.submodules.sandgem.net_405.eq(m.submodules.pastoria.net_405),
             m.submodules.sandgem.net_349.eq(m.submodules.pastoria.net_349),
-            m.submodules.celestic.net_934.eq(m.submodules.floaroma.net_934),
+            m.submodules.celestic.net_934.eq(m.submodules.done_controller.enable_gated),
             m.submodules.celestic.I.eq(self.I),
             m.submodules.celestic.net_319.eq(m.submodules.jubilife.net_319),
             m.submodules.celestic.net_832.eq(m.submodules.jubilife.net_832),
             m.submodules.celestic.net_20.eq(m.submodules.jubilife.net_20),
             m.submodules.celestic.net_380.eq(m.submodules.jubilife.net_380),
-            m.submodules.hearthome.net_934.eq(m.submodules.floaroma.net_934),
+            m.submodules.hearthome.net_934.eq(m.submodules.done_controller.enable_gated),
             m.submodules.hearthome.I.eq(self.I),
             m.submodules.hearthome.net_20.eq(m.submodules.jubilife.net_20),
             m.submodules.hearthome.net_319.eq(m.submodules.jubilife.net_319),
             m.submodules.hearthome.net_380.eq(m.submodules.jubilife.net_380),
             m.submodules.hearthome.net_832.eq(m.submodules.jubilife.net_832),
-            m.submodules.solaceon.net_934.eq(m.submodules.floaroma.net_934),
+            m.submodules.solaceon.net_934.eq(m.submodules.done_controller.enable_gated),
             m.submodules.solaceon.I.eq(self.I),
             m.submodules.solaceon.net_20.eq(m.submodules.jubilife.net_20),
             m.submodules.solaceon.net_319.eq(m.submodules.jubilife.net_319),
             m.submodules.solaceon.net_832.eq(m.submodules.jubilife.net_832),
             m.submodules.solaceon.net_380.eq(m.submodules.jubilife.net_380),
-            m.submodules.pastoria.net_934.eq(m.submodules.floaroma.net_934),
+            m.submodules.pastoria.net_934.eq(m.submodules.done_controller.enable_gated),
             m.submodules.pastoria.I.eq(self.I),
             m.submodules.pastoria.net_736.eq(m.submodules.sunyshore.net_736),
             m.submodules.pastoria.net_1034.eq(m.submodules.sunyshore.net_1034),
             m.submodules.pastoria.net_857.eq(m.submodules.sunyshore.net_857),
             m.submodules.pastoria.net_985.eq(m.submodules.sunyshore.net_985),
             m.submodules.veilstone.net_2259.eq(m.submodules.snowpoint.net_2259),
-            m.submodules.veilstone.net_3136.eq(m.submodules.floaroma.net_3136),
+            m.submodules.veilstone.net_3136.eq(m.submodules.done_controller.done),
             m.submodules.veilstone.net_2505.eq(m.submodules.snowpoint.net_2505),
             m.submodules.veilstone.net_343.eq(m.submodules.sandgem.net_343),
             m.submodules.veilstone.net_1557.eq(m.submodules.eterna.net_1557),
@@ -1207,7 +1213,7 @@ class puzzle(wiring.Component):
             m.submodules.output_eternaforest.net_2189.eq(m.submodules.output_lakeacuity.net_2189),
             m.submodules.output_eternaforest.net_1420.eq(m.submodules.output_lakevalor.net_1420),
             m.submodules.output_eternaforest.net_3037.eq(m.submodules.output_mtcoronet.net_3037),
-            m.submodules.output_eternaforest.net_934.eq(m.submodules.floaroma.net_934),
+            m.submodules.output_eternaforest.net_934.eq(m.submodules.done_controller.enable_gated),
             m.submodules.output_eternaforest.net_3419.eq(m.submodules.output_mtcoronet.net_3419),
             m.submodules.output_eternaforest.net_3420.eq(m.submodules.output_mtcoronet.net_3420),
             m.submodules.output_eternaforest.net_3384.eq(m.submodules.output_mtcoronet.net_3384),
@@ -1261,6 +1267,11 @@ class puzzle(wiring.Component):
             self.O_6_.eq(m.submodules.output_mtcoronet.O_6_),
             self.O_7_.eq(m.submodules.output_mtcoronet.O_7_),
             self.success.eq(m.submodules.veilstone.success),
+        ]
+
+        m.d.comb += [
+            self.net_934.eq(m.submodules.done_controller.enable_gated),
+            self.net_3136.eq(m.submodules.done_controller.done),
         ]
 
         return m
