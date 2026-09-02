@@ -1,3 +1,4 @@
+from faulthandler import enable
 from sys import argv
 
 from amaranth import *
@@ -35,90 +36,29 @@ class DoneController(wiring.Component):
 
         return m
 
-class Jubilife(wiring.Component):
-    net_934: In(1)
-    net_1526: Out(1)
-    net_832: Out(1)
-    net_20: Out(1)
-    net_380: Out(1)
-    net_319: Out(1)
+class Counter11(wiring.Component):
+    enable: In(1)
+    increment: In(1)
+    count: Out(4)
+    overflow: Out(1)
 
     def __init__(self):
-        self._net_1526 = Signal(1)
-        self._net_832 = Signal(1, init=0)
-        self._net_20 = Signal(1, init=0)
-        self._net_319 = Signal(1, init=0)
-        self._net_380 = Signal(1, init=0)
-
+        self._count = Signal(4, init=0)
+        
         super().__init__()
 
     def elaborate(self, platform):
         m = Module()
 
-        m.d.comb += [
-            self._net_1526.eq(~(self._net_319) & ~(self._net_380) & (self._net_832) & (self._net_20)),
-        ]
+        m.d.comb += self.overflow.eq(self._count == 10)
 
-        m.d.sync += [
-            self._net_832.eq(~(((self.net_934) & (self._net_1526)) | (((self._net_20) & (self._net_319) & (self._net_380) & (self.net_934)) & (self._net_832)) | (~(((self._net_20) & (self._net_319) & (self._net_380) & (self.net_934)) | (self._net_832))))),
-            self._net_20.eq(~(((self.net_934) & (self._net_1526)) | (~(((self._net_319) & (self.net_934)) | (self._net_20))) | ((self._net_20) & (self._net_319) & (self.net_934)))),
-            self._net_319.eq(~((self._net_1526) | (~((self._net_319) ^ (self.net_934))))),
-            self._net_380.eq((self._net_380) ^ ((self._net_20) & (self._net_319) & (self.net_934))),
-        ]
+        with m.If(self.enable & self.increment):
+            with m.If(self.overflow):
+                m.d.sync += self._count.eq(0)
+            with m.Else():
+                m.d.sync += self._count.eq(self._count + 1)
 
-        m.d.comb += [
-            self.net_1526.eq(self._net_1526),
-            self.net_832.eq(self._net_832),
-            self.net_20.eq(self._net_20),
-            self.net_380.eq(self._net_380),
-            self.net_319.eq(self._net_319),
-        ]
-
-        return m
-
-class Twinleaf(wiring.Component):
-    net_934: In(1)
-    net_1526: In(1)
-    net_1508: Out(1)
-    net_435: Out(1)
-    net_323: Out(1)
-    net_378: Out(1)
-    net_377: Out(1)
-
-    def __init__(self):
-        self._net_1510 = Signal(1)
-        self._net_1531 = Signal(1)
-        self._net_1689 = Signal(1)
-        self._net_378 = Signal(1, init=0)
-        self._net_435 = Signal(1, init=0)
-        self._net_323 = Signal(1, init=0)
-        self._net_377 = Signal(1, init=0)
-
-        super().__init__()
-
-    def elaborate(self, platform):
-        m = Module()
-
-        m.d.comb += [
-            self._net_1510.eq(~(~(self._net_435) & (self._net_378) & (self._net_377))),
-            self._net_1531.eq(~((self.net_1526) & (self.net_934))),
-            self._net_1689.eq((self.net_1526) & (self.net_934) & (self._net_377) & (self._net_323)),
-        ]
-
-        m.d.sync += [
-            self._net_378.eq((((self._net_323) | (self._net_1510) | (self._net_1531)) & (~((self._net_435) & (self._net_378) & (self._net_1689))) & ((((self._net_435) & (self._net_1689)) | (self._net_378))))),
-            self._net_435.eq((self._net_435) ^ (self._net_1689)),
-            self._net_323.eq(Mux((self._net_323), (self._net_1531), ((self.net_1526) & (self.net_934) & (self._net_1510)))),
-            self._net_377.eq((((self._net_1510) | (self._net_1531)) & ((((self.net_1526) & (self.net_934) & (self._net_323)) | (self._net_377))) & (~(self._net_1689)))),
-        ]
-
-        m.d.comb += [
-            self.net_1508.eq(~((self._net_323) | (self._net_1510))),
-            self.net_435.eq(self._net_435),
-            self.net_323.eq(self._net_323),
-            self.net_378.eq(self._net_378),
-            self.net_377.eq(self._net_377),
-        ]
+        m.d.comb += self.count.eq(self._count)
 
         return m
 
@@ -1081,14 +1021,25 @@ class puzzle(wiring.Component):
     def __init__(self):
         self.net_934 = Signal()
         self.net_3136 = Signal()
+        self.net_1508 = Signal()
+        self.net_1526 = Signal()
+        self.net_319 = Signal()
+        self.net_20 = Signal()
+        self.net_380 = Signal()
+        self.net_832 = Signal()
+        self.net_323 = Signal()
+        self.net_377 = Signal()
+        self.net_435 = Signal()
+        self.net_378 = Signal()
+
         super().__init__()
 
     def elaborate(self, platform):
         m = Module()
 
         m.submodules.done_controller = DoneController()
-        m.submodules.jubilife = Jubilife()
-        m.submodules.twinleaf = Twinleaf()
+        m.submodules.minor_counter = Counter11()
+        m.submodules.major_counter = Counter11()
         m.submodules.snowpoint = Snowpoint()
         m.submodules.eterna = Eterna()
         m.submodules.oreburgh = Oreburgh()
@@ -1106,12 +1057,13 @@ class puzzle(wiring.Component):
         m.submodules.sunyshore = Sunyshore()
 
         m.d.comb += [
-            m.submodules.done_controller.major_index_overflow.eq(m.submodules.twinleaf.net_1508),
-            m.submodules.done_controller.minor_index_overflow.eq(m.submodules.jubilife.net_1526),
+            m.submodules.done_controller.major_index_overflow.eq(m.submodules.major_counter.overflow),
+            m.submodules.done_controller.minor_index_overflow.eq(m.submodules.minor_counter.overflow),
             m.submodules.done_controller.enable.eq(self.enable),
-            m.submodules.jubilife.net_934.eq(m.submodules.done_controller.enable_gated),
-            m.submodules.twinleaf.net_934.eq(m.submodules.done_controller.enable_gated),
-            m.submodules.twinleaf.net_1526.eq(m.submodules.jubilife.net_1526),
+            m.submodules.minor_counter.enable.eq(m.submodules.done_controller.enable_gated),
+            m.submodules.minor_counter.increment.eq(1),
+            m.submodules.major_counter.enable.eq(m.submodules.done_controller.enable_gated),
+            m.submodules.major_counter.increment.eq(m.submodules.minor_counter.overflow),
             m.submodules.snowpoint.net_934.eq(m.submodules.done_controller.enable_gated),
             m.submodules.snowpoint.net_1723.eq(m.submodules.eterna.net_1723),
             m.submodules.snowpoint.net_1719.eq(m.submodules.eterna.net_1719),
@@ -1129,12 +1081,12 @@ class puzzle(wiring.Component):
             m.submodules.snowpoint.net_2386.eq(m.submodules.celestic.net_2386),
             m.submodules.snowpoint.net_2463.eq(m.submodules.celestic.net_2463),
             m.submodules.snowpoint.net_2459.eq(m.submodules.celestic.net_2459),
-            m.submodules.eterna.net_1526.eq(m.submodules.jubilife.net_1526),
+            m.submodules.eterna.net_1526.eq(m.submodules.minor_counter.overflow),
             m.submodules.eterna.net_934.eq(m.submodules.done_controller.enable_gated),
-            m.submodules.eterna.net_832.eq(m.submodules.jubilife.net_832),
-            m.submodules.eterna.net_20.eq(m.submodules.jubilife.net_20),
-            m.submodules.eterna.net_380.eq(m.submodules.jubilife.net_380),
-            m.submodules.eterna.net_319.eq(m.submodules.jubilife.net_319),
+            m.submodules.eterna.net_832.eq(m.submodules.minor_counter.count[3]),
+            m.submodules.eterna.net_20.eq(m.submodules.minor_counter.count[1]),
+            m.submodules.eterna.net_380.eq(m.submodules.minor_counter.count[2]),
+            m.submodules.eterna.net_319.eq(m.submodules.minor_counter.count[0]),
             m.submodules.eterna.I.eq(self.I),
             m.submodules.oreburgh.net_934.eq(m.submodules.done_controller.enable_gated),
             m.submodules.oreburgh.I.eq(self.I),
@@ -1151,22 +1103,22 @@ class puzzle(wiring.Component):
             m.submodules.sandgem.net_349.eq(m.submodules.pastoria.net_349),
             m.submodules.celestic.net_934.eq(m.submodules.done_controller.enable_gated),
             m.submodules.celestic.I.eq(self.I),
-            m.submodules.celestic.net_319.eq(m.submodules.jubilife.net_319),
-            m.submodules.celestic.net_832.eq(m.submodules.jubilife.net_832),
-            m.submodules.celestic.net_20.eq(m.submodules.jubilife.net_20),
-            m.submodules.celestic.net_380.eq(m.submodules.jubilife.net_380),
+            m.submodules.celestic.net_319.eq(m.submodules.minor_counter.count[0]),
+            m.submodules.celestic.net_832.eq(m.submodules.minor_counter.count[3]),
+            m.submodules.celestic.net_20.eq(m.submodules.minor_counter.count[1]),
+            m.submodules.celestic.net_380.eq(m.submodules.minor_counter.count[2]),
             m.submodules.hearthome.net_934.eq(m.submodules.done_controller.enable_gated),
             m.submodules.hearthome.I.eq(self.I),
-            m.submodules.hearthome.net_20.eq(m.submodules.jubilife.net_20),
-            m.submodules.hearthome.net_319.eq(m.submodules.jubilife.net_319),
-            m.submodules.hearthome.net_380.eq(m.submodules.jubilife.net_380),
-            m.submodules.hearthome.net_832.eq(m.submodules.jubilife.net_832),
+            m.submodules.hearthome.net_20.eq(m.submodules.minor_counter.count[1]),
+            m.submodules.hearthome.net_319.eq(m.submodules.minor_counter.count[0]),
+            m.submodules.hearthome.net_380.eq(m.submodules.minor_counter.count[2]),
+            m.submodules.hearthome.net_832.eq(m.submodules.minor_counter.count[3]),
             m.submodules.solaceon.net_934.eq(m.submodules.done_controller.enable_gated),
             m.submodules.solaceon.I.eq(self.I),
-            m.submodules.solaceon.net_20.eq(m.submodules.jubilife.net_20),
-            m.submodules.solaceon.net_319.eq(m.submodules.jubilife.net_319),
-            m.submodules.solaceon.net_832.eq(m.submodules.jubilife.net_832),
-            m.submodules.solaceon.net_380.eq(m.submodules.jubilife.net_380),
+            m.submodules.solaceon.net_20.eq(m.submodules.minor_counter.count[1]),
+            m.submodules.solaceon.net_319.eq(m.submodules.minor_counter.count[0]),
+            m.submodules.solaceon.net_832.eq(m.submodules.minor_counter.count[3]),
+            m.submodules.solaceon.net_380.eq(m.submodules.minor_counter.count[2]),
             m.submodules.pastoria.net_934.eq(m.submodules.done_controller.enable_gated),
             m.submodules.pastoria.I.eq(self.I),
             m.submodules.pastoria.net_736.eq(m.submodules.sunyshore.net_736),
@@ -1247,14 +1199,14 @@ class puzzle(wiring.Component):
             m.submodules.output_lakevalor.net_1505.eq(m.submodules.output_mtcoronet.net_1505),
             m.submodules.output_lakevalor.net_1363.eq(m.submodules.output_mtcoronet.net_1363),
             m.submodules.output_lakevalor.net_1447.eq(self.net_1447),
-            m.submodules.sunyshore.net_435.eq(m.submodules.twinleaf.net_435),
-            m.submodules.sunyshore.net_380.eq(m.submodules.jubilife.net_380),
-            m.submodules.sunyshore.net_323.eq(m.submodules.twinleaf.net_323),
-            m.submodules.sunyshore.net_378.eq(m.submodules.twinleaf.net_378),
-            m.submodules.sunyshore.net_377.eq(m.submodules.twinleaf.net_377),
-            m.submodules.sunyshore.net_832.eq(m.submodules.jubilife.net_832),
-            m.submodules.sunyshore.net_20.eq(m.submodules.jubilife.net_20),
-            m.submodules.sunyshore.net_319.eq(m.submodules.jubilife.net_319),
+            m.submodules.sunyshore.net_435.eq(m.submodules.major_counter.count[2]),
+            m.submodules.sunyshore.net_380.eq(m.submodules.minor_counter.count[2]),
+            m.submodules.sunyshore.net_323.eq(m.submodules.major_counter.count[0]),
+            m.submodules.sunyshore.net_378.eq(m.submodules.major_counter.count[3]),
+            m.submodules.sunyshore.net_377.eq(m.submodules.major_counter.count[1]),
+            m.submodules.sunyshore.net_832.eq(m.submodules.minor_counter.count[3]),
+            m.submodules.sunyshore.net_20.eq(m.submodules.minor_counter.count[1]),
+            m.submodules.sunyshore.net_319.eq(m.submodules.minor_counter.count[0]),
         ]
 
         m.d.comb += [
@@ -1272,6 +1224,16 @@ class puzzle(wiring.Component):
         m.d.comb += [
             self.net_934.eq(m.submodules.done_controller.enable_gated),
             self.net_3136.eq(m.submodules.done_controller.done),
+            self.net_1508.eq(m.submodules.major_counter.overflow),
+            self.net_1526.eq(m.submodules.minor_counter.overflow),
+            self.net_319.eq(m.submodules.minor_counter.count[0]),
+            self.net_20.eq(m.submodules.minor_counter.count[1]),
+            self.net_380.eq(m.submodules.minor_counter.count[2]),
+            self.net_832.eq(m.submodules.minor_counter.count[3]),
+            self.net_323.eq(m.submodules.major_counter.count[0]),
+            self.net_377.eq(m.submodules.major_counter.count[1]),
+            self.net_435.eq(m.submodules.major_counter.count[2]),
+            self.net_378.eq(m.submodules.major_counter.count[3]),
         ]
 
         return m
