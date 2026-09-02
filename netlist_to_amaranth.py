@@ -807,6 +807,12 @@ def generate_amaranth(in_: Path, out: Path, enable_lumping=True):
             for module in lumps:
                 module.write_amaranth_module(f)
 
+            net_to_lump = dict(
+                chain.from_iterable(
+                    ((net, lump.name) for net in lump.outputs) for lump in lumps
+                )
+            )
+
             f.write(f"class {top.name}(wiring.Component):\n")
             for gate in top.gates.values():
                 if gate.typename == "custom__input":
@@ -814,15 +820,14 @@ def generate_amaranth(in_: Path, out: Path, enable_lumping=True):
             for pin in top.outputs:
                 f.write(f"    {pin}: Out(1)\n")
 
+            f.write("\n    # Testing outputs\n")
+            for net in net_to_lump:
+                if net not in top.outputs:
+                    f.write(f"    {net}: Out(1)\n")
+
             f.write("\n    def elaborate(self, platform):\n        m = Module()\n\n")
             for lump in lumps:
                 f.write(f"        m.submodules.{lump.name.lower()} = {lump.name}()\n")
-
-            net_to_lump = dict(
-                chain.from_iterable(
-                    ((net, lump.name) for net in lump.outputs) for lump in lumps
-                )
-            )
 
             f.write("\n        m.d.comb += [\n")
             for lump in lumps:
@@ -838,16 +843,25 @@ def generate_amaranth(in_: Path, out: Path, enable_lumping=True):
                             f.write(
                                 f"            m.submodules.{lump.name.lower()}.{net}.eq(self.{net}),\n"
                             )
-            f.write("        ]\n")
+            f.write("        ]\n\n")
 
-            f.write("\n        m.d.comb += [\n")
+            f.write("        m.d.comb += [\n")
             for pin in top.outputs:
                 source = net_to_lump[pin]
                 f.write(
                     f"            self.{pin}.eq(m.submodules.{source.lower()}.{pin}),\n"
                 )
-            f.write("        ]\n")
-            f.write("\n        return m\n\n")
+            f.write("        ]\n\n")
+
+            f.write("        # Testing outputs\n")
+            f.write("        m.d.comb += [\n")
+            for net, source in net_to_lump.items():
+                if net not in top.outputs:
+                    f.write(
+                        f"            self.{net}.eq(m.submodules.{source.lower()}.{net}),\n"
+                    )
+            f.write("        ]\n\n")
+            f.write("        return m\n\n")
         else:
             top.write_amaranth_module(f)
 

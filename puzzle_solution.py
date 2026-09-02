@@ -1005,21 +1005,106 @@ class puzzle(wiring.Component):
     O_7_: Out(1)
     success: Out(1)
 
-    def __init__(self):
-        self.net_934 = Signal()
-        self.net_3136 = Signal()
-        self.net_1508 = Signal()
-        self.net_1526 = Signal()
-        self.net_319 = Signal()
-        self.net_20 = Signal()
-        self.net_380 = Signal()
-        self.net_832 = Signal()
-        self.net_323 = Signal()
-        self.net_377 = Signal()
-        self.net_435 = Signal()
-        self.net_378 = Signal()
-
-        super().__init__()
+    # Testing outputs
+    net_934: Out(1)
+    net_3136: Out(1)
+    net_1526: Out(1)
+    net_832: Out(1)
+    net_20: Out(1)
+    net_380: Out(1)
+    net_319: Out(1)
+    net_1508: Out(1)
+    net_435: Out(1)
+    net_323: Out(1)
+    net_378: Out(1)
+    net_377: Out(1)
+    net_2259: Out(1)
+    net_2505: Out(1)
+    net_1723: Out(1)
+    net_1719: Out(1)
+    net_1628: Out(1)
+    net_1738: Out(1)
+    net_1557: Out(1)
+    net_719: Out(1)
+    net_1084: Out(1)
+    net_791: Out(1)
+    net_343: Out(1)
+    net_2386: Out(1)
+    net_2463: Out(1)
+    net_2459: Out(1)
+    net_2480: Out(1)
+    net_2475: Out(1)
+    net_3283: Out(1)
+    net_2474: Out(1)
+    net_2471: Out(1)
+    net_2393: Out(1)
+    net_3830: Out(1)
+    net_2416: Out(1)
+    net_204: Out(1)
+    net_203: Out(1)
+    net_294: Out(1)
+    net_226: Out(1)
+    net_545: Out(1)
+    net_1185: Out(1)
+    net_341: Out(1)
+    net_401: Out(1)
+    net_399: Out(1)
+    net_405: Out(1)
+    net_349: Out(1)
+    net_3771: Out(1)
+    net_3920: Out(1)
+    net_1351: Out(1)
+    net_1365: Out(1)
+    net_3037: Out(1)
+    net_3419: Out(1)
+    net_3420: Out(1)
+    net_3384: Out(1)
+    net_1505: Out(1)
+    net_1363: Out(1)
+    net_3617: Out(1)
+    net_3516: Out(1)
+    net_3435: Out(1)
+    net_3543: Out(1)
+    net_3552: Out(1)
+    net_3613: Out(1)
+    net_3518: Out(1)
+    net_3818: Out(1)
+    net_2232: Out(1)
+    net_2006: Out(1)
+    net_2313: Out(1)
+    net_1977: Out(1)
+    net_2315: Out(1)
+    net_2088: Out(1)
+    net_2298: Out(1)
+    net_2120: Out(1)
+    net_2460: Out(1)
+    net_2117: Out(1)
+    net_2240: Out(1)
+    net_2189: Out(1)
+    net_2461: Out(1)
+    net_2154: Out(1)
+    net_2479: Out(1)
+    net_2004: Out(1)
+    net_1927: Out(1)
+    net_1816: Out(1)
+    net_1936: Out(1)
+    net_1905: Out(1)
+    net_1815: Out(1)
+    net_1928: Out(1)
+    net_1907: Out(1)
+    net_1822: Out(1)
+    net_1425: Out(1)
+    net_1693: Out(1)
+    net_1694: Out(1)
+    net_1516: Out(1)
+    net_1420: Out(1)
+    net_1559: Out(1)
+    net_1629: Out(1)
+    net_1472: Out(1)
+    net_736: Out(1)
+    net_1034: Out(1)
+    net_857: Out(1)
+    net_985: Out(1)
 
     def elaborate(self, platform):
         m = Module()
@@ -1208,19 +1293,107 @@ class puzzle(wiring.Component):
             self.success.eq(m.submodules.veilstone.success),
         ]
 
+        # Testing outputs
         m.d.comb += [
             self.net_934.eq(m.submodules.done_controller.enable_gated),
             self.net_3136.eq(m.submodules.done_controller.done),
-            self.net_1508.eq(m.submodules.major_counter.overflow),
             self.net_1526.eq(m.submodules.minor_counter.overflow),
-            self.net_319.eq(m.submodules.minor_counter.count[0]),
+            self.net_832.eq(m.submodules.minor_counter.count[3]),
             self.net_20.eq(m.submodules.minor_counter.count[1]),
             self.net_380.eq(m.submodules.minor_counter.count[2]),
-            self.net_832.eq(m.submodules.minor_counter.count[3]),
-            self.net_323.eq(m.submodules.major_counter.count[0]),
-            self.net_377.eq(m.submodules.major_counter.count[1]),
+            self.net_319.eq(m.submodules.minor_counter.count[0]),
+            self.net_1508.eq(m.submodules.major_counter.overflow),
             self.net_435.eq(m.submodules.major_counter.count[2]),
+            self.net_323.eq(m.submodules.major_counter.count[0]),
             self.net_378.eq(m.submodules.major_counter.count[3]),
+            self.net_377.eq(m.submodules.major_counter.count[1]),
+            self.net_2259.eq(m.submodules.snowpoint.net_2259),
+            self.net_2505.eq(m.submodules.snowpoint.net_2505),
+            self.net_1723.eq(m.submodules.eterna.net_1723),
+            self.net_1719.eq(m.submodules.eterna.net_1719),
+            self.net_1628.eq(m.submodules.eterna.net_1628),
+            self.net_1738.eq(m.submodules.eterna.net_1738),
+            self.net_1557.eq(m.submodules.eterna.net_1557),
+            self.net_719.eq(m.submodules.oreburgh.net_719),
+            self.net_1084.eq(m.submodules.oreburgh.net_1084),
+            self.net_791.eq(m.submodules.oreburgh.net_791),
+            self.net_343.eq(m.submodules.sandgem.net_343),
+            self.net_2386.eq(m.submodules.celestic.net_2386),
+            self.net_2463.eq(m.submodules.celestic.net_2463),
+            self.net_2459.eq(m.submodules.celestic.net_2459),
+            self.net_2480.eq(m.submodules.hearthome.net_2480),
+            self.net_2475.eq(m.submodules.hearthome.net_2475),
+            self.net_3283.eq(m.submodules.hearthome.net_3283),
+            self.net_2474.eq(m.submodules.hearthome.net_2474),
+            self.net_2471.eq(m.submodules.hearthome.net_2471),
+            self.net_2393.eq(m.submodules.hearthome.net_2393),
+            self.net_3830.eq(m.submodules.hearthome.net_3830),
+            self.net_2416.eq(m.submodules.solaceon.net_2416),
+            self.net_204.eq(m.submodules.pastoria.net_204),
+            self.net_203.eq(m.submodules.pastoria.net_203),
+            self.net_294.eq(m.submodules.pastoria.net_294),
+            self.net_226.eq(m.submodules.pastoria.net_226),
+            self.net_545.eq(m.submodules.pastoria.net_545),
+            self.net_1185.eq(m.submodules.pastoria.net_1185),
+            self.net_341.eq(m.submodules.pastoria.net_341),
+            self.net_401.eq(m.submodules.pastoria.net_401),
+            self.net_399.eq(m.submodules.pastoria.net_399),
+            self.net_405.eq(m.submodules.pastoria.net_405),
+            self.net_349.eq(m.submodules.pastoria.net_349),
+            self.net_3771.eq(m.submodules.veilstone.net_3771),
+            self.net_3920.eq(m.submodules.veilstone.net_3920),
+            self.net_1351.eq(m.submodules.output_mtcoronet.net_1351),
+            self.net_1365.eq(m.submodules.output_mtcoronet.net_1365),
+            self.net_3037.eq(m.submodules.output_mtcoronet.net_3037),
+            self.net_3419.eq(m.submodules.output_mtcoronet.net_3419),
+            self.net_3420.eq(m.submodules.output_mtcoronet.net_3420),
+            self.net_3384.eq(m.submodules.output_mtcoronet.net_3384),
+            self.net_1505.eq(m.submodules.output_mtcoronet.net_1505),
+            self.net_1363.eq(m.submodules.output_mtcoronet.net_1363),
+            self.net_3617.eq(m.submodules.output_eternaforest.net_3617),
+            self.net_3516.eq(m.submodules.output_eternaforest.net_3516),
+            self.net_3435.eq(m.submodules.output_eternaforest.net_3435),
+            self.net_3543.eq(m.submodules.output_eternaforest.net_3543),
+            self.net_3552.eq(m.submodules.output_eternaforest.net_3552),
+            self.net_3613.eq(m.submodules.output_eternaforest.net_3613),
+            self.net_3518.eq(m.submodules.output_eternaforest.net_3518),
+            self.net_3818.eq(m.submodules.output_eternaforest.net_3818),
+            self.net_2232.eq(m.submodules.output_lakeacuity.net_2232),
+            self.net_2006.eq(m.submodules.output_lakeacuity.net_2006),
+            self.net_2313.eq(m.submodules.output_lakeacuity.net_2313),
+            self.net_1977.eq(m.submodules.output_lakeacuity.net_1977),
+            self.net_2315.eq(m.submodules.output_lakeacuity.net_2315),
+            self.net_2088.eq(m.submodules.output_lakeacuity.net_2088),
+            self.net_2298.eq(m.submodules.output_lakeacuity.net_2298),
+            self.net_2120.eq(m.submodules.output_lakeacuity.net_2120),
+            self.net_2460.eq(m.submodules.output_lakeacuity.net_2460),
+            self.net_2117.eq(m.submodules.output_lakeacuity.net_2117),
+            self.net_2240.eq(m.submodules.output_lakeacuity.net_2240),
+            self.net_2189.eq(m.submodules.output_lakeacuity.net_2189),
+            self.net_2461.eq(m.submodules.output_lakeacuity.net_2461),
+            self.net_2154.eq(m.submodules.output_lakeacuity.net_2154),
+            self.net_2479.eq(m.submodules.output_lakeacuity.net_2479),
+            self.net_2004.eq(m.submodules.output_lakeacuity.net_2004),
+            self.net_1927.eq(m.submodules.output_lakeverity.net_1927),
+            self.net_1816.eq(m.submodules.output_lakeverity.net_1816),
+            self.net_1936.eq(m.submodules.output_lakeverity.net_1936),
+            self.net_1905.eq(m.submodules.output_lakeverity.net_1905),
+            self.net_1815.eq(m.submodules.output_lakeverity.net_1815),
+            self.net_1928.eq(m.submodules.output_lakeverity.net_1928),
+            self.net_1907.eq(m.submodules.output_lakeverity.net_1907),
+            self.net_1822.eq(m.submodules.output_lakeverity.net_1822),
+            self.net_1425.eq(m.submodules.output_lakevalor.net_1425),
+            self.net_1693.eq(m.submodules.output_lakevalor.net_1693),
+            self.net_1694.eq(m.submodules.output_lakevalor.net_1694),
+            self.net_1516.eq(m.submodules.output_lakevalor.net_1516),
+            self.net_1420.eq(m.submodules.output_lakevalor.net_1420),
+            self.net_1559.eq(m.submodules.output_lakevalor.net_1559),
+            self.net_1629.eq(m.submodules.output_lakevalor.net_1629),
+            self.net_1472.eq(m.submodules.output_lakevalor.net_1472),
+            self.net_736.eq(m.submodules.sunyshore.net_736),
+            self.net_1034.eq(m.submodules.sunyshore.net_1034),
+            self.net_857.eq(m.submodules.sunyshore.net_857),
+            self.net_985.eq(m.submodules.sunyshore.net_985),
         ]
 
         return m
