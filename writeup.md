@@ -130,6 +130,12 @@
     * It also strongly implies that the solution is an image, scanned left-to-right, then top to bottom.
         * Renaming the counters now.
     * Interestingly the values in the image seem to range from 0 to 10 - much like the coordinates that index said image
+2. Figured out Veilstone, where the success signal comes from
+    * There seems to be an "almost success" signal, that pokes the output generator
+    * Bycatch: figuring out things about Snowpoint and Hearthome
+        * Celestic and Solaceon are meant to be part of Hearthome, they would form another 11-property monster like Pastoria
+            * It is however a happy accidentthat I have isolated Solaceon - it makes it easier to study a single property.
+        * Snowpoint somehow absorbed the big-and from Hearthome and surrounding parts - the same way Oreburgh almost absorbed Pastoria's big and, but luckily that got separated as Sandgem.
 
 # Register of Easter Eggs
 * Jane Street logo on met2 (I suppose it's an easter egg, since it wasn't in the PNG, but not exactly a major achievement to find it)

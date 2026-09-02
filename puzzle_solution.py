@@ -470,38 +470,29 @@ class Pastoria(wiring.Component):
 
         return m
 
-class Veilstone(wiring.Component):
-    net_2259: In(1)
-    net_3136: In(1)
-    net_2505: In(1)
-    net_343: In(1)
-    net_1557: In(1)
-    net_719: In(1)
-    net_3771: Out(1)
-    net_3920: Out(1)
-    success: Out(1)
+class SuccessController(wiring.Component):
+    done: In(1)
+    snowpoint_property: In(1)
+    hearthome_property: In(1)
+    pastoria_property: In(1)
+    eterna_property: In(1)
+    oreburgh_property: In(1)
 
-    def __init__(self):
-        self._net_3771 = Signal(1, init=0)
-        self._net_3920 = Signal(1, init=0)
-        self._success = Signal(1, init=0)
-
-        super().__init__()
+    done_delayed: Out(1, init=0)
+    almost_success: Out(1, init=0)
+    success: Out(1, init=0)
 
     def elaborate(self, platform):
         m = Module()
 
-        m.d.sync += [
-            self._net_3771.eq((self.net_3136) | (self._net_3771)),
-            self._net_3920.eq((((~(self.net_2259)) & ((self.net_1557) & (self.net_719)) & (~(self._net_3771) & (self.net_3136) & (self.net_343) & (self.net_2505))) | ((self._net_3920) & (~(~(self._net_3771) & (self.net_3136)))))),
-            self._success.eq((((self.net_2259) & ((self.net_1557) & (self.net_719)) & (~(self._net_3771) & (self.net_3136) & (self.net_343) & (self.net_2505))) | ((self._success) & (~(~(self._net_3771) & (self.net_3136)))))),
-        ]
+        with m.If(self.done):
+            m.d.sync += self.done_delayed.eq(1)
 
-        m.d.comb += [
-            self.net_3771.eq(self._net_3771),
-            self.net_3920.eq(self._net_3920),
-            self.success.eq(self._success),
-        ]
+        with m.If(self.done & ~self.done_delayed):
+            m.d.sync += [
+                self.success.eq(self.snowpoint_property & self.eterna_property & self.oreburgh_property & self.pastoria_property & self.hearthome_property),
+                self.almost_success.eq(~self.snowpoint_property & self.eterna_property & self.oreburgh_property & self.pastoria_property & self.hearthome_property),
+            ]
 
         return m
 
@@ -1037,7 +1028,7 @@ class puzzle(wiring.Component):
         m.submodules.hearthome = Hearthome()
         m.submodules.solaceon = Solaceon()
         m.submodules.pastoria = Pastoria()
-        m.submodules.veilstone = Veilstone()
+        m.submodules.success_controller = SuccessController()
         m.submodules.output_mtcoronet = Output_MtCoronet()
         m.submodules.output_eternaforest = Output_EternaForest()
         m.submodules.output_lakeacuity = Output_LakeAcuity()
@@ -1114,14 +1105,14 @@ class puzzle(wiring.Component):
             m.submodules.pastoria.net_1034.eq(m.submodules.sunyshore.out[3]),
             m.submodules.pastoria.net_857.eq(m.submodules.sunyshore.out[1]),
             m.submodules.pastoria.net_985.eq(m.submodules.sunyshore.out[2]),
-            m.submodules.veilstone.net_2259.eq(m.submodules.snowpoint.net_2259),
-            m.submodules.veilstone.net_3136.eq(m.submodules.done_controller.done),
-            m.submodules.veilstone.net_2505.eq(m.submodules.snowpoint.net_2505),
-            m.submodules.veilstone.net_343.eq(m.submodules.sandgem.net_343),
-            m.submodules.veilstone.net_1557.eq(m.submodules.eterna.net_1557),
-            m.submodules.veilstone.net_719.eq(m.submodules.oreburgh.net_719),
-            m.submodules.output_mtcoronet.net_3771.eq(m.submodules.veilstone.net_3771),
-            m.submodules.output_mtcoronet.net_3920.eq(m.submodules.veilstone.net_3920),
+            m.submodules.success_controller.done.eq(m.submodules.done_controller.done),
+            m.submodules.success_controller.snowpoint_property.eq(m.submodules.snowpoint.net_2259),
+            m.submodules.success_controller.hearthome_property.eq(m.submodules.snowpoint.net_2505),
+            m.submodules.success_controller.pastoria_property.eq(m.submodules.sandgem.net_343),
+            m.submodules.success_controller.eterna_property.eq(m.submodules.eterna.net_1557),
+            m.submodules.success_controller.oreburgh_property.eq(m.submodules.oreburgh.net_719),
+            m.submodules.output_mtcoronet.net_3771.eq(m.submodules.success_controller.done_delayed),
+            m.submodules.output_mtcoronet.net_3920.eq(m.submodules.success_controller.almost_success),
             m.submodules.output_mtcoronet.net_1084.eq(m.submodules.oreburgh.net_1084),
             m.submodules.output_mtcoronet.net_791.eq(m.submodules.oreburgh.net_791),
             m.submodules.output_mtcoronet.net_3617.eq(m.submodules.output_eternaforest.net_3617),
@@ -1130,7 +1121,7 @@ class puzzle(wiring.Component):
             m.submodules.output_mtcoronet.net_3543.eq(m.submodules.output_eternaforest.net_3543),
             m.submodules.output_mtcoronet.net_3552.eq(m.submodules.output_eternaforest.net_3552),
             m.submodules.output_mtcoronet.net_3613.eq(m.submodules.output_eternaforest.net_3613),
-            m.submodules.output_mtcoronet.success.eq(m.submodules.veilstone.success),
+            m.submodules.output_mtcoronet.success.eq(m.submodules.success_controller.success),
             m.submodules.output_mtcoronet.net_3518.eq(m.submodules.output_eternaforest.net_3518),
             m.submodules.output_mtcoronet.net_3818.eq(m.submodules.output_eternaforest.net_3818),
             m.submodules.output_eternaforest.net_1351.eq(m.submodules.output_mtcoronet.net_1351),
@@ -1201,7 +1192,7 @@ class puzzle(wiring.Component):
             self.O_5_.eq(m.submodules.output_mtcoronet.O_5_),
             self.O_6_.eq(m.submodules.output_mtcoronet.O_6_),
             self.O_7_.eq(m.submodules.output_mtcoronet.O_7_),
-            self.success.eq(m.submodules.veilstone.success),
+            self.success.eq(m.submodules.success_controller.success),
         ]
 
         # Testing outputs
@@ -1251,8 +1242,8 @@ class puzzle(wiring.Component):
             self.net_399.eq(m.submodules.pastoria.net_399),
             self.net_405.eq(m.submodules.pastoria.net_405),
             self.net_349.eq(m.submodules.pastoria.net_349),
-            self.net_3771.eq(m.submodules.veilstone.net_3771),
-            self.net_3920.eq(m.submodules.veilstone.net_3920),
+            self.net_3771.eq(m.submodules.success_controller.done_delayed),
+            self.net_3920.eq(m.submodules.success_controller.almost_success),
             self.net_1351.eq(m.submodules.output_mtcoronet.net_1351),
             self.net_1365.eq(m.submodules.output_mtcoronet.net_1365),
             self.net_3037.eq(m.submodules.output_mtcoronet.net_3037),
