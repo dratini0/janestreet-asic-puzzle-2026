@@ -31,6 +31,14 @@ class JsonNetlist(TypedDict):
     gates: list[JsonGate]
 
 
+@dataclass(frozen=True)
+class OutputPolicy:
+    fanout_limit: int  # 0 = unlimited
+
+
+DEFAULT_OUTPUT_POLICY = OutputPolicy(fanout_limit=2)
+
+
 @dataclass
 class Gate:
     typename: str
@@ -47,6 +55,7 @@ class Lump:
     x1: float
     y0: float
     y1: float
+    output_policy: OutputPolicy | None = None
 
 
 # fmt: off
@@ -99,6 +108,7 @@ class Module:
     name: str
     gates: dict[str, Gate]
     outputs: dict[str, str]
+    output_policy: OutputPolicy = DEFAULT_OUTPUT_POLICY
 
     def prune(self):
         reachable = set()
@@ -120,13 +130,15 @@ class Module:
 
         self.gates = result
 
-    def pretty_print_combinatorial_expression(self, gate_name: str) -> str:
+    def pretty_print_combinatorial_expression(
+        self, gate_name: str, intermediates: dict[str, str], *, use_intermediates=True
+    ) -> str:
         gate = self.gates[gate_name]
 
         def recurse(pin: str) -> str:
             # The oldest macro-processing trick in the book: we need to bracket this
             # to avoid weird precedence issues
-            return f"({self.pretty_print_combinatorial_expression(gate.inputs[pin])})"
+            return f"({self.pretty_print_combinatorial_expression(gate.inputs[pin], intermediates, use_intermediates=True)})"
 
         if gate.typename == "custom__input":
             result = f"self.{gate.output_netname}"
@@ -143,6 +155,8 @@ class Module:
             result = "0"
         elif gate.typename == "custom__const1":
             result = "1"
+        elif use_intermediates and gate_name in intermediates:
+            result = f"self._{intermediates[gate_name]}"
         elif gate.typename == "sky130_fd_sc_hd__and2":
             result = f"{recurse('A')} & {recurse('B')}"
         elif gate.typename == "sky130_fd_sc_hd__and3":
@@ -355,6 +369,38 @@ class Module:
         return result
 
     def write_amaranth_module(self, f: io.Writer[str]):
+        intermediates = {}
+
+        for name, gate in self.gates.items():
+            if gate.typename == "sky130_fd_sc_hd__buf":
+                intermediates[name] = gate.output_netname
+
+        if self.output_policy.fanout_limit > 0:
+            fanouts = Counter(
+                chain.from_iterable(
+                    gate.inputs.values() for gate in self.gates.values()
+                )
+            )
+            fanouts.update(self.outputs.values())
+
+            for name, fanout in fanouts.items():
+                if fanout > self.output_policy.fanout_limit:
+                    gate = self.gates[name]
+                    if gate.typename not in {
+                        "custom__input",
+                        "custom__const0",
+                        "custom__const1",
+                        "sky130_fd_sc_hd__dfrtp",
+                        "sky130_fd_sc_hd__dfstp",
+                        "sky130_fd_sc_hd__dfxtp",
+                        "custom__dfre",
+                        "custom__dfse",
+                        "custom__dfe",
+                    }:
+                        intermediates[name] = gate.output_netname
+
+        # TODO: toposort intermediates? Or just do it by hand?
+
         f.write(f"class {self.name}(wiring.Component):\n")
         for gate in self.gates.values():
             if gate.typename == "custom__input":
@@ -363,6 +409,8 @@ class Module:
             f.write(f"    {pin}: Out(1)\n")
 
         f.write("\n    def __init__(self):\n")
+        for intermediate_net in intermediates.values():
+            f.write(f"        self._{intermediate_net} = Signal(1)\n")
         for gate in self.gates.values():
             if gate.typename in {"sky130_fd_sc_hd__dfrtp", "custom__dfre"}:
                 f.write(f"        self._{gate.output_netname} = Signal(1, init=0)\n")
@@ -375,6 +423,14 @@ class Module:
         f.write("\n        super().__init__()\n\n")
 
         f.write("    def elaborate(self, platform):\n        m = Module()\n\n")
+        if intermediates:
+            f.write("        m.d.comb += [\n")
+            for gate_name, intermediate_net in intermediates.items():
+                f.write(
+                    f"            self._{intermediate_net}.eq({self.pretty_print_combinatorial_expression(gate_name, intermediates, use_intermediates=False)}),\n"
+                )
+            f.write("        ]\n\n")
+
         f.write("        m.d.sync += [\n")
         for gate in self.gates.values():
             if gate.typename in {
@@ -383,9 +439,9 @@ class Module:
                 "sky130_fd_sc_hd__dfxtp",
             }:
                 f.write(
-                    f"            self._{gate.output_netname}.eq({self.pretty_print_combinatorial_expression(gate.inputs['D'])}),\n"
+                    f"            self._{gate.output_netname}.eq({self.pretty_print_combinatorial_expression(gate.inputs['D'], intermediates)}),\n"
                 )
-        f.write("        ]\n")
+        f.write("        ]\n\n")
 
         flops_with_enable = [
             gate
@@ -397,23 +453,23 @@ class Module:
             flops_with_enable, key=lambda gate: gate.inputs["EN"]
         ):
             f.write(
-                f"\n        with m.If({self.pretty_print_combinatorial_expression(enable)}):\n"
+                f"        with m.If({self.pretty_print_combinatorial_expression(enable, intermediates)}):\n"
             )
             f.write("            m.d.sync += [\n")
             for gate in group:
                 f.write(
-                    f"                self._{gate.output_netname}.eq({self.pretty_print_combinatorial_expression(gate.inputs['D'])}),\n"
+                    f"                self._{gate.output_netname}.eq({self.pretty_print_combinatorial_expression(gate.inputs['D'], intermediates)}),\n"
                 )
-            f.write("            ]\n")
+            f.write("            ]\n\n")
 
-        f.write("\n        m.d.comb += [\n")
+        f.write("        m.d.comb += [\n")
         for pin, driver in self.outputs.items():
             f.write(
-                f"            self.{pin}.eq({self.pretty_print_combinatorial_expression(driver)}),\n"
+                f"            self.{pin}.eq({self.pretty_print_combinatorial_expression(driver, intermediates)}),\n"
             )
-        f.write("        ]\n")
+        f.write("        ]\n\n")
 
-        f.write("\n        return m\n\n")
+        f.write("        return m\n\n")
 
     @classmethod
     def load(cls, _in: Path) -> Self:
@@ -667,7 +723,12 @@ class Module:
 
     def separate_lumps(self, lumps_definitions: list[Lump]) -> list[Self]:
         lumps = {
-            lump.name: self.__class__(name=lump.name, gates={}, outputs={})
+            lump.name: self.__class__(
+                name=lump.name,
+                gates={},
+                outputs={},
+                output_policy=lump.output_policy or self.output_policy,
+            )
             for lump in lumps_definitions
         }
         gate_to_lump = {}
