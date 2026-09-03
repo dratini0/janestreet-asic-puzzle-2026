@@ -141,7 +141,7 @@ async def random_inputs(dut):
 
     r = Random(bytes.fromhex("77c614446ff43005"))
 
-    for _ in range(10):
+    for _ in range(100):
         dut.rst_n.value = 0
         await FallingEdge(dut.clk)
         await FallingEdge(dut.clk)
@@ -249,5 +249,25 @@ async def eterna_too_few(dut):
             [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # too few
             [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
             [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ],
+    )
+
+
+@cocotb.test()
+async def column_checker_order_check(dut):
+    await test_with_data(
+        dut,
+        [
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
         ],
     )

@@ -1,3 +1,4 @@
+from faulthandler import enable
 from itertools import chain
 from sys import argv
 
@@ -224,138 +225,50 @@ class Oreburgh(wiring.Component):
 
         return m
 
-class Celestic(wiring.Component):
-    net_934: In(1)
-    I: In(1)
-    net_319: In(1)
-    net_832: In(1)
-    net_20: In(1)
-    net_380: In(1)
-    net_2386: Out(1)
-    net_2463: Out(1)
-    net_2459: Out(1)
 
-    def __init__(self):
-        self._net_4199 = Signal(1, init=0)
-        self._net_4274 = Signal(1, init=0)
-        self._net_4147 = Signal(1, init=0)
-        self._net_4163 = Signal(1, init=0)
-        self._net_4160 = Signal(1, init=0)
-        self._net_4300 = Signal(1, init=0)
+class SingleColumnChecker(wiring.Component):
+    enable: In(1)
+    I: In(1)
+    x: In(4)
+    result: Out(1)
+
+    def __init__(self, column: int):
+        self._column = column
+        self._counter = Signal(2, init=0)
 
         super().__init__()
 
     def elaborate(self, platform):
         m = Module()
 
-        m.d.sync += [
-            self._net_4199.eq((((self._net_4163) | (~((self.I) & (self.net_934) & (self._net_4199) & (~(self.net_20) & ~(self.net_380) & (self.net_832) & (self.net_319))))) & ((((self.I) & (self.net_934) & (~(self.net_20) & ~(self.net_380) & (self.net_832) & (self.net_319))) | (self._net_4199))))),
-            self._net_4274.eq((((self._net_4300) | (~((self.I) & (self.net_934) & (self._net_4274) & (~(self.net_319) & ~(self.net_380) & (self.net_832) & (self.net_20))))) & ((((self.I) & (self.net_934) & (~(self.net_319) & ~(self.net_380) & (self.net_832) & (self.net_20))) | (self._net_4274))))),
-            self._net_4147.eq((((self._net_4147) | (~(((self.net_20) | (self.net_319) | (self.net_380) | ~(self.net_832)) | (~((self.I) & (self.net_934)))))) & ((self._net_4160) | (~(self._net_4147)) | ((self.net_20) | (self.net_319) | (self.net_380) | ~(self.net_832)) | (~((self.I) & (self.net_934)))))),
-            self._net_4163.eq(~(~(self._net_4163) & (~((self.I) & (self.net_934) & (self._net_4199) & (~(self.net_20) & ~(self.net_380) & (self.net_832) & (self.net_319)))))),
-            self._net_4160.eq((((self._net_4147) & (~(((self.net_20) | (self.net_319) | (self.net_380) | ~(self.net_832)) | (~((self.I) & (self.net_934)))))) | (self._net_4160))),
-            self._net_4300.eq(~(~(self._net_4300) & (~((self.I) & (self.net_934) & (self._net_4274) & (~(self.net_319) & ~(self.net_380) & (self.net_832) & (self.net_20)))))),
-        ]
+        with m.If((self.x == self._column) & self.I & self.enable & (self._counter != 3)):
+            m.d.sync += self._counter.eq(self._counter + 1)
 
-        m.d.comb += [
-            self.net_2386.eq(~(self._net_4274) & (self._net_4300)),
-            self.net_2463.eq(~(self._net_4199) & (self._net_4163)),
-            self.net_2459.eq((self._net_4160) & (~(self._net_4147))),
-        ]
+        m.d.comb += self.result.eq(self._counter == 2)
 
         return m
 
-class Hearthome(wiring.Component):
-    net_934: In(1)
+class ColumnChecker(wiring.Component):
+    enable: In(1)
     I: In(1)
-    net_20: In(1)
-    net_319: In(1)
-    net_380: In(1)
-    net_832: In(1)
-    net_2480: Out(1)
-    net_2475: Out(1)
-    net_3283: Out(1)
-    net_2474: Out(1)
-    net_2471: Out(1)
-    net_2393: Out(1)
-    net_3830: Out(1)
-
-    def __init__(self):
-        self._net_3755 = Signal(1, init=0)
-        self._net_3675 = Signal(1, init=0)
-        self._net_3902 = Signal(1, init=0)
-        self._net_3325 = Signal(1, init=0)
-        self._net_3139 = Signal(1, init=0)
-        self._net_4028 = Signal(1, init=0)
-        self._net_3470 = Signal(1, init=0)
-        self._net_4023 = Signal(1, init=0)
-        self._net_3751 = Signal(1, init=0)
-        self._net_3676 = Signal(1, init=0)
-        self._net_3861 = Signal(1, init=0)
-        self._net_3471 = Signal(1, init=0)
-        self._net_3320 = Signal(1, init=0)
-        self._net_3148 = Signal(1, init=0)
-
-        super().__init__()
+    x: In(4)
+    results: Out(11)
+    result: Out(1)
 
     def elaborate(self, platform):
         m = Module()
 
-        m.d.sync += [
-            self._net_3755.eq((((self._net_3751) | (~((self.I) & (self.net_934) & (self._net_3755) & (~(self.net_20) & ~(self.net_832) & (self.net_380) & (self.net_319))))) & ((((self.I) & (self.net_934) & (~(self.net_20) & ~(self.net_832) & (self.net_380) & (self.net_319))) | (self._net_3755))))),
-            self._net_3675.eq((((self._net_3676) & (~(((self.net_20) | (self.net_319) | (self.net_832) | ~(self.net_380)) | (~((self.I) & (self.net_934)))))) | (self._net_3675))),
-            self._net_3902.eq((((self._net_3861) | (~((self.I) & (self.net_934) & (self._net_3902) & (~(self.net_319) & ~(self.net_832) & (self.net_380) & (self.net_20))))) & ((((self.I) & (self.net_934) & (~(self.net_319) & ~(self.net_832) & (self.net_380) & (self.net_20))) | (self._net_3902))))),
-            self._net_3325.eq((((self._net_3320) & (~(((self.net_319) | (self.net_832) | (self.net_380) | ~(self.net_20)) | (~((self.I) & (self.net_934)))))) | (self._net_3325))),
-            self._net_3139.eq((((self._net_3139) | (~(((self.net_20) | (self.net_832) | (self.net_380) | ~(self.net_319)) | (~((self.I) & (self.net_934)))))) & ((self._net_3148) | (~(self._net_3139)) | ((self.net_20) | (self.net_832) | (self.net_380) | ~(self.net_319)) | (~((self.I) & (self.net_934)))))),
-            self._net_4028.eq((((self._net_4023) | (~((self.I) & (self.net_934) & (self._net_4028) & (~(self.net_832) & (self.net_380) & (self.net_319) & (self.net_20))))) & ((((self.I) & (self.net_934) & (~(self.net_832) & (self.net_380) & (self.net_319) & (self.net_20))) | (self._net_4028))))),
-            self._net_3470.eq((((self._net_3471) | (~((self.I) & (self.net_934) & (self._net_3470) & (~(self.net_832) & ~(self.net_380) & (self.net_319) & (self.net_20))))) & ((((self.I) & (self.net_934) & (~(self.net_832) & ~(self.net_380) & (self.net_319) & (self.net_20))) | (self._net_3470))))),
-            self._net_4023.eq(~(~(self._net_4023) & (~((self.I) & (self.net_934) & (self._net_4028) & (~(self.net_832) & (self.net_380) & (self.net_319) & (self.net_20)))))),
-            self._net_3751.eq(~(~(self._net_3751) & (~((self.I) & (self.net_934) & (self._net_3755) & (~(self.net_20) & ~(self.net_832) & (self.net_380) & (self.net_319)))))),
-            self._net_3676.eq((((self._net_3676) | (~(((self.net_20) | (self.net_319) | (self.net_832) | ~(self.net_380)) | (~((self.I) & (self.net_934)))))) & ((self._net_3675) | (~(self._net_3676)) | ((self.net_20) | (self.net_319) | (self.net_832) | ~(self.net_380)) | (~((self.I) & (self.net_934)))))),
-            self._net_3861.eq(~(~(self._net_3861) & (~((self.I) & (self.net_934) & (self._net_3902) & (~(self.net_319) & ~(self.net_832) & (self.net_380) & (self.net_20)))))),
-            self._net_3471.eq(~(~(self._net_3471) & (~((self.I) & (self.net_934) & (self._net_3470) & (~(self.net_832) & ~(self.net_380) & (self.net_319) & (self.net_20)))))),
-            self._net_3320.eq((((self._net_3320) | (~(((self.net_319) | (self.net_832) | (self.net_380) | ~(self.net_20)) | (~((self.I) & (self.net_934)))))) & ((self._net_3325) | (~(self._net_3320)) | ((self.net_319) | (self.net_832) | (self.net_380) | ~(self.net_20)) | (~((self.I) & (self.net_934)))))),
-            self._net_3148.eq((((self._net_3139) & (~(((self.net_20) | (self.net_832) | (self.net_380) | ~(self.net_319)) | (~((self.I) & (self.net_934)))))) | (self._net_3148))),
-        ]
+        for column in range(11):
+            column_checker = SingleColumnChecker(column)
+            m.submodules[f"column_{column}"] = column_checker
+            m.d.comb += [
+                column_checker.enable.eq(self.enable),
+                column_checker.I.eq(self.I),
+                column_checker.x.eq(self.x),
+                self.results[column].eq(column_checker.result),
+            ]
 
-        m.d.comb += [
-            self.net_2480.eq(~(self._net_3470) & (self._net_3471)),
-            self.net_2475.eq((self._net_3325) & (~(self._net_3320))),
-            self.net_3283.eq((self._net_3148) & (~(self._net_3139))),
-            self.net_2474.eq(~(self._net_4028) & (self._net_4023)),
-            self.net_2471.eq(~(self._net_3902) & (self._net_3861)),
-            self.net_2393.eq((self._net_3675) & (~(self._net_3676))),
-            self.net_3830.eq(~(self._net_3755) & (self._net_3751)),
-        ]
-
-        return m
-
-class Solaceon(wiring.Component):
-    net_934: In(1)
-    I: In(1)
-    net_20: In(1)
-    net_319: In(1)
-    net_832: In(1)
-    net_380: In(1)
-    net_2416: Out(1)
-
-    def __init__(self):
-        self._net_2922 = Signal(1, init=0)
-        self._net_2819 = Signal(1, init=0)
-
-        super().__init__()
-
-    def elaborate(self, platform):
-        m = Module()
-
-        m.d.sync += [
-            self._net_2922.eq((((self._net_2819) | (~((self.I) & (self.net_934) & (self._net_2922) & (~((self.net_20) | (self.net_319) | (self.net_832) | (self.net_380)))))) & ((((self.I) & (self.net_934) & (~((self.net_20) | (self.net_319) | (self.net_832) | (self.net_380)))) | (self._net_2922))))),
-            self._net_2819.eq(~(~(self._net_2819) & (~((self.I) & (self.net_934) & (self._net_2922) & (~((self.net_20) | (self.net_319) | (self.net_832) | (self.net_380))))))),
-        ]
-
-        m.d.comb += [
-            self.net_2416.eq(~(self._net_2922) & (self._net_2819)),
-        ]
+        m.d.comb += self.result.eq(self.results.all())
 
         return m
 
@@ -1002,10 +915,7 @@ class puzzle(wiring.Component):
         m.submodules.eterna = Eterna()
         m.submodules.eterna_comb = EternaComb()
         m.submodules.oreburgh = Oreburgh()
-        m.submodules.celestic = Celestic()
-        m.submodules.hearthome = Hearthome()
-        m.submodules.solaceon = Solaceon()
-        m.submodules.hearthome_big_and = BigAnd()
+        m.submodules.column_checker = ColumnChecker()
         m.submodules.pastoria = Pastoria()
         m.submodules.pastoria_big_and = BigAnd()
         m.submodules.success_controller = SuccessController()
@@ -1036,37 +946,9 @@ class puzzle(wiring.Component):
             m.submodules.eterna_comb.x.eq(m.submodules.x_counter.count),
             m.submodules.oreburgh.net_934.eq(m.submodules.done_controller.enable_gated),
             m.submodules.oreburgh.I.eq(self.I),
-            m.submodules.celestic.net_934.eq(m.submodules.done_controller.enable_gated),
-            m.submodules.celestic.I.eq(self.I),
-            m.submodules.celestic.net_319.eq(m.submodules.x_counter.count[0]),
-            m.submodules.celestic.net_832.eq(m.submodules.x_counter.count[3]),
-            m.submodules.celestic.net_20.eq(m.submodules.x_counter.count[1]),
-            m.submodules.celestic.net_380.eq(m.submodules.x_counter.count[2]),
-            m.submodules.hearthome.net_934.eq(m.submodules.done_controller.enable_gated),
-            m.submodules.hearthome.I.eq(self.I),
-            m.submodules.hearthome.net_20.eq(m.submodules.x_counter.count[1]),
-            m.submodules.hearthome.net_319.eq(m.submodules.x_counter.count[0]),
-            m.submodules.hearthome.net_380.eq(m.submodules.x_counter.count[2]),
-            m.submodules.hearthome.net_832.eq(m.submodules.x_counter.count[3]),
-            m.submodules.solaceon.net_934.eq(m.submodules.done_controller.enable_gated),
-            m.submodules.solaceon.I.eq(self.I),
-            m.submodules.solaceon.net_20.eq(m.submodules.x_counter.count[1]),
-            m.submodules.solaceon.net_319.eq(m.submodules.x_counter.count[0]),
-            m.submodules.solaceon.net_832.eq(m.submodules.x_counter.count[3]),
-            m.submodules.solaceon.net_380.eq(m.submodules.x_counter.count[2]),
-            m.submodules.hearthome_big_and.conditions.eq(Cat(
-                m.submodules.hearthome.net_2480,
-                m.submodules.hearthome.net_2475,
-                m.submodules.solaceon.net_2416,
-                m.submodules.hearthome.net_3283,
-                m.submodules.hearthome.net_2474,
-                m.submodules.hearthome.net_2471,
-                m.submodules.hearthome.net_2393,
-                m.submodules.hearthome.net_3830,
-                m.submodules.celestic.net_2386,
-                m.submodules.celestic.net_2463,
-                m.submodules.celestic.net_2459,
-            )),
+            m.submodules.column_checker.enable.eq(m.submodules.done_controller.enable_gated),
+            m.submodules.column_checker.I.eq(self.I),
+            m.submodules.column_checker.x.eq(m.submodules.x_counter.count),
             m.submodules.pastoria.net_934.eq(m.submodules.done_controller.enable_gated),
             m.submodules.pastoria.I.eq(self.I),
             m.submodules.pastoria.net_736.eq(m.submodules.sunyshore.out[0]),
@@ -1088,7 +970,7 @@ class puzzle(wiring.Component):
             )),
             m.submodules.success_controller.done.eq(m.submodules.done_controller.done),
             m.submodules.success_controller.snowpoint_property.eq(m.submodules.snowpoint.net_2259),
-            m.submodules.success_controller.hearthome_property.eq(m.submodules.hearthome_big_and.result),
+            m.submodules.success_controller.hearthome_property.eq(m.submodules.column_checker.result),
             m.submodules.success_controller.pastoria_property.eq(m.submodules.pastoria_big_and.result),
             m.submodules.success_controller.eterna_property.eq(m.submodules.eterna.result),
             m.submodules.success_controller.oreburgh_property.eq(m.submodules.oreburgh.net_719),
@@ -1191,7 +1073,7 @@ class puzzle(wiring.Component):
             self.net_378.eq(m.submodules.y_counter.count[3]),
             self.net_377.eq(m.submodules.y_counter.count[1]),
             self.net_2259.eq(m.submodules.snowpoint.net_2259),
-            self.net_2505.eq(m.submodules.hearthome_big_and.result),
+            self.net_2505.eq(m.submodules.column_checker.result),
             self.net_1723.eq(m.submodules.eterna_comb.net_1723),
             self.net_1719.eq(m.submodules.eterna_comb.net_1719),
             self.net_1628.eq(m.submodules.eterna_comb.net_1628),
@@ -1201,17 +1083,17 @@ class puzzle(wiring.Component):
             self.net_1084.eq(m.submodules.oreburgh.net_1084),
             self.net_791.eq(m.submodules.oreburgh.net_791),
             self.net_343.eq(m.submodules.pastoria_big_and.result),
-            self.net_2386.eq(m.submodules.celestic.net_2386),
-            self.net_2463.eq(m.submodules.celestic.net_2463),
-            self.net_2459.eq(m.submodules.celestic.net_2459),
-            self.net_2480.eq(m.submodules.hearthome.net_2480),
-            self.net_2475.eq(m.submodules.hearthome.net_2475),
-            self.net_3283.eq(m.submodules.hearthome.net_3283),
-            self.net_2474.eq(m.submodules.hearthome.net_2474),
-            self.net_2471.eq(m.submodules.hearthome.net_2471),
-            self.net_2393.eq(m.submodules.hearthome.net_2393),
-            self.net_3830.eq(m.submodules.hearthome.net_3830),
-            self.net_2416.eq(m.submodules.solaceon.net_2416),
+            self.net_2386.eq(m.submodules.column_checker.results[10]),
+            self.net_2463.eq(m.submodules.column_checker.results[9]),
+            self.net_2459.eq(m.submodules.column_checker.results[8]),
+            self.net_2480.eq(m.submodules.column_checker.results[3]),
+            self.net_2475.eq(m.submodules.column_checker.results[2]),
+            self.net_3283.eq(m.submodules.column_checker.results[1]),
+            self.net_2474.eq(m.submodules.column_checker.results[7]),
+            self.net_2471.eq(m.submodules.column_checker.results[6]),
+            self.net_2393.eq(m.submodules.column_checker.results[4]),
+            self.net_3830.eq(m.submodules.column_checker.results[5]),
+            self.net_2416.eq(m.submodules.column_checker.results[0]),
             self.net_204.eq(m.submodules.pastoria.net_204),
             self.net_203.eq(m.submodules.pastoria.net_203),
             self.net_294.eq(m.submodules.pastoria.net_294),
