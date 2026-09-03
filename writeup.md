@@ -142,6 +142,16 @@
 4. Hearthome and Pastoria are exactly that
     * Separating Celestic and Solaceon didn't actually help, but it didn't hurt that much either.
 
+# Day 10
+
+1. Solved Snowpoint, and the leftover combinatorial bits from Eterna
+    * It's a check that no two adjacents pixels (by corner or edge) can be set
+    * This is the property that can give you the almost success output if you fulfill all other criteria
+    * The combinatorial bits got absorbed into Eterna (the RowChecker)
+    * There appears to be some porentially interesting development history here, see the note in EdgeChecker
+
 # Register of Easter Eggs
 * Jane Street logo on met2 (I suppose it's an easter egg, since it wasn't in the PNG, but not exactly a major achievement to find it)
 * JSC image used for the Sunyshore module - though this may be actually shaping the solution via Pastoria, I don't know.
+* The odd history discoverd in the EdgeChecker
+* The near-miss output from the SuccessController

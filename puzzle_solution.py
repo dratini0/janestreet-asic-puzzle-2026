@@ -50,58 +50,76 @@ class Counter11(wiring.Component):
 
         return m
 
-class Snowpoint(wiring.Component):
-    net_934: In(1)
-    net_1723: In(1)
-    net_1719: In(1)
-    I: In(1)
-    net_1628: In(1)
-    net_1738: In(1)
-    net_2259: Out(1)
+class EdgeChecker(wiring.Component):
+    """
+    Check if certain neighbours of the current pixel exist
+
+    It seems like at some point, it was meant to check for a top edge too, but
+    this was removed because at the top row, the shift register is reset to 0
+    anyway, rendering the top check useless.
+
+    Presumably to avoid this optimization changing the interface, a buffer is
+    inserted to make the two output nets separate. I'm assuming this is a
+    special feature for this puzzle, but it might be a thing to aid LVS (layout
+    versus schematic) checking.
+
+    This has also resulted in one of the constants
+    """
+    x: In(description=4)
+    top_left_available: Out(1)
+    top_available: Out(1)
+    top_right_available: Out(1)
+    left_available: Out(1)
 
     def __init__(self):
-        self._net_2173 = Signal(1, init=0)
-        self._net_2422 = Signal(1, init=0)
-        self._net_2255 = Signal(1, init=0)
-        self._net_2507 = Signal(1, init=0)
-        self._net_2421 = Signal(1, init=0)
-        self._net_2256 = Signal(1, init=0)
-        self._net_2218 = Signal(1, init=0)
-        self._net_2217 = Signal(1, init=0)
-        self._net_2109 = Signal(1, init=0)
-        self._net_2140 = Signal(1, init=0)
-        self._net_2417 = Signal(1, init=0)
-        self._net_2419 = Signal(1, init=0)
-        self._net_2073 = Signal(1, init=0)
+        self._left = Signal(1)
+        self._top = Signal(1)
+        self._right = Signal(1)
 
         super().__init__()
 
     def elaborate(self, platform):
         m = Module()
 
-        m.d.sync += [
-            self._net_2256.eq((((self.I) & (self.net_934) & ((((self.net_1738) & (self._net_2140)) | ((self.net_1628) & (self._net_2218)) | ((((self.net_1719) & (self._net_2422)) | ((self.net_1723) & (self._net_2421))))))) | (self._net_2256))),
-        ]
-
-        with m.If(self.net_934):
-            m.d.sync += [
-                self._net_2173.eq(self._net_2217),
-                self._net_2422.eq(self.I),
-                self._net_2255.eq(self._net_2417),
-                self._net_2507.eq(self._net_2419),
-                self._net_2421.eq(self._net_2218),
-                self._net_2218.eq(self._net_2140),
-                self._net_2217.eq(self._net_2255),
-                self._net_2109.eq(self._net_2073),
-                self._net_2140.eq(self._net_2109),
-                self._net_2417.eq(self._net_2507),
-                self._net_2419.eq(self._net_2422),
-                self._net_2073.eq(self._net_2173),
-            ]
-
         m.d.comb += [
-            self.net_2259.eq(~(self._net_2256)),
+            self._left.eq(self.x == 0),
+            # self._top.eq(self.y == 0),
+            self._top.eq(0),
+            self._right.eq(self.x == 10),
+
+            self.top_left_available.eq(~self._top & ~self._left),
+            self.top_available.eq(~self._top),
+            self.top_right_available.eq(~self._top & ~self._right),
+            self.left_available.eq(~self._left),
         ]
+
+        return m
+
+class AdjacencyChecker(wiring.Component):
+    """No two adjacent pixels can be set (Moore neighbourhood)"""
+    enable: In(1)
+    I: In(1)
+    top_left_available: In(1)
+    top_available: In(1)
+    top_right_available: In(1)
+    left_available: In(1)
+    result: Out(1, init=1)
+
+    def __init__(self):
+        self._failed = Signal(1, init=0)
+        self._sr = Signal(12, init=0)
+
+        super().__init__()
+
+    def elaborate(self, platform):
+        m = Module()
+
+
+        with m.If(self.enable):
+            m.d.sync += self._sr.eq(Cat(self.I, self._sr[:11]))
+
+            with m.If(self.I & (self.top_left_available & self._sr[11] | self.top_available & self._sr[10] | self.top_right_available & self._sr[9] | self.left_available & self._sr[0])):
+                m.d.sync += self.result.eq(0)
 
         return m
 
@@ -132,25 +150,6 @@ class RowChecker(wiring.Component):
                 m.d.sync += self._counter.eq(0)
                 with m.If(self._counter_next != 2):
                     m.d.sync += self.result.eq(0)
-
-        return m
-
-class EternaComb(wiring.Component):
-    x: In(description=4)
-    net_1723: Out(1)
-    net_1719: Out(1)
-    net_1628: Out(1)
-    net_1738: Out(1)
-
-    def elaborate(self, platform):
-        m = Module()
-
-        m.d.comb += [
-            self.net_1723.eq(Buf(self.x != 0)),
-            self.net_1719.eq(self.x != 0),
-            self.net_1628.eq(1),
-            self.net_1738.eq(self.x != 10),
-        ]
 
         return m
 
@@ -255,7 +254,7 @@ class ColumnChecker(wiring.Component):
 
 class SuccessController(wiring.Component):
     done: In(1)
-    snowpoint_property: In(1)
+    adjacency_property: In(1)
     column_property: In(1)
     region_property: In(1)
     row_property: In(1)
@@ -273,8 +272,8 @@ class SuccessController(wiring.Component):
 
         with m.If(self.done & ~self.done_delayed):
             m.d.sync += [
-                self.success.eq(self.snowpoint_property & self.row_property & self.oreburgh_property & self.region_property & self.column_property),
-                self.almost_success.eq(~self.snowpoint_property & self.row_property & self.oreburgh_property & self.region_property & self.column_property),
+                self.success.eq(self.adjacency_property & self.row_property & self.oreburgh_property & self.region_property & self.column_property),
+                self.almost_success.eq(~self.adjacency_property & self.row_property & self.oreburgh_property & self.region_property & self.column_property),
             ]
 
         return m
@@ -807,9 +806,9 @@ class puzzle(wiring.Component):
         m.submodules.done_controller = DoneController()
         m.submodules.x_counter = Counter11()
         m.submodules.y_counter = Counter11()
-        m.submodules.snowpoint = Snowpoint()
+        m.submodules.adjacency_checker = AdjacencyChecker()
         m.submodules.row_checker = RowChecker()
-        m.submodules.eterna_comb = EternaComb()
+        m.submodules.edge_checker = EdgeChecker()
         m.submodules.oreburgh = Oreburgh()
         m.submodules.column_checker = ColumnChecker()
         m.submodules.region_checker = ColumnChecker()
@@ -829,16 +828,16 @@ class puzzle(wiring.Component):
             m.submodules.x_counter.increment.eq(1),
             m.submodules.y_counter.enable.eq(m.submodules.done_controller.enable_gated),
             m.submodules.y_counter.increment.eq(m.submodules.x_counter.overflow),
-            m.submodules.snowpoint.net_934.eq(m.submodules.done_controller.enable_gated),
-            m.submodules.snowpoint.net_1723.eq(m.submodules.eterna_comb.net_1723),
-            m.submodules.snowpoint.net_1719.eq(m.submodules.eterna_comb.net_1719),
-            m.submodules.snowpoint.I.eq(self.I),
-            m.submodules.snowpoint.net_1628.eq(m.submodules.eterna_comb.net_1628),
-            m.submodules.snowpoint.net_1738.eq(m.submodules.eterna_comb.net_1738),
+            m.submodules.adjacency_checker.enable.eq(m.submodules.done_controller.enable_gated),
+            m.submodules.adjacency_checker.I.eq(self.I),
+            m.submodules.adjacency_checker.top_left_available.eq(m.submodules.edge_checker.top_left_available),
+            m.submodules.adjacency_checker.top_available.eq(m.submodules.edge_checker.top_available),
+            m.submodules.adjacency_checker.top_right_available.eq(m.submodules.edge_checker.top_right_available),
+            m.submodules.adjacency_checker.left_available.eq(m.submodules.edge_checker.left_available),
             m.submodules.row_checker.enable.eq(m.submodules.done_controller.enable_gated),
             m.submodules.row_checker.I.eq(self.I),
             m.submodules.row_checker.x_overflow.eq(m.submodules.x_counter.overflow),
-            m.submodules.eterna_comb.x.eq(m.submodules.x_counter.count),
+            m.submodules.edge_checker.x.eq(m.submodules.x_counter.count),
             m.submodules.oreburgh.net_934.eq(m.submodules.done_controller.enable_gated),
             m.submodules.oreburgh.I.eq(self.I),
             m.submodules.column_checker.enable.eq(m.submodules.done_controller.enable_gated),
@@ -848,7 +847,7 @@ class puzzle(wiring.Component):
             m.submodules.region_checker.I.eq(self.I),
             m.submodules.region_checker.x.eq(m.submodules.regions.out),
             m.submodules.success_controller.done.eq(m.submodules.done_controller.done),
-            m.submodules.success_controller.snowpoint_property.eq(m.submodules.snowpoint.net_2259),
+            m.submodules.success_controller.adjacency_property.eq(m.submodules.adjacency_checker.result),
             m.submodules.success_controller.column_property.eq(m.submodules.column_checker.result),
             m.submodules.success_controller.region_property.eq(m.submodules.region_checker.result),
             m.submodules.success_controller.row_property.eq(m.submodules.row_checker.result),
@@ -951,12 +950,12 @@ class puzzle(wiring.Component):
             self.net_323.eq(m.submodules.y_counter.count[0]),
             self.net_378.eq(m.submodules.y_counter.count[3]),
             self.net_377.eq(m.submodules.y_counter.count[1]),
-            self.net_2259.eq(m.submodules.snowpoint.net_2259),
+            self.net_2259.eq(m.submodules.adjacency_checker.result),
             self.net_2505.eq(m.submodules.column_checker.result),
-            self.net_1723.eq(m.submodules.eterna_comb.net_1723),
-            self.net_1719.eq(m.submodules.eterna_comb.net_1719),
-            self.net_1628.eq(m.submodules.eterna_comb.net_1628),
-            self.net_1738.eq(m.submodules.eterna_comb.net_1738),
+            self.net_1723.eq(m.submodules.edge_checker.top_left_available),
+            self.net_1719.eq(m.submodules.edge_checker.left_available),
+            self.net_1628.eq(m.submodules.edge_checker.top_available),
+            self.net_1738.eq(m.submodules.edge_checker.top_right_available),
             self.net_1557.eq(m.submodules.row_checker.result),
             self.net_719.eq(m.submodules.oreburgh.net_719),
             self.net_1084.eq(m.submodules.oreburgh.net_1084),
