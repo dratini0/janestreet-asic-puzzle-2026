@@ -136,6 +136,8 @@
         * Celestic and Solaceon are meant to be part of Hearthome, they would form another 11-property monster like Pastoria
             * It is however a happy accidentthat I have isolated Solaceon - it makes it easier to study a single property.
         * Snowpoint somehow absorbed the big-and from Hearthome and surrounding parts - the same way Oreburgh almost absorbed Pastoria's big and, but luckily that got separated as Sandgem.
+3. Eterna
+    * It seems to have some combinatorial bits, that only feed Snowpoint. But also, it has two copies of the same expression, one with a buffer, both going to Snowpoint. How weird.
 
 # Register of Easter Eggs
 * Jane Street logo on met2 (I suppose it's an easter egg, since it wasn't in the PNG, but not exactly a major achievement to find it)

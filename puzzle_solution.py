@@ -124,21 +124,12 @@ class Snowpoint(wiring.Component):
         return m
 
 class Eterna(wiring.Component):
-    net_1526: In(1)
-    net_934: In(1)
-    net_832: In(1)
-    net_20: In(1)
-    net_380: In(1)
-    net_319: In(1)
+    enable: In(1)
     I: In(1)
-    net_1723: Out(1)
-    net_1719: Out(1)
-    net_1628: Out(1)
-    net_1738: Out(1)
+    x_overflow: In(1)
     net_1557: Out(1)
 
     def __init__(self):
-        self._net_1723 = Signal(1)
         self._net_1669 = Signal(1)
         self._net_1640 = Signal(1, init=0)
         self._net_1495 = Signal(1, init=0)
@@ -150,22 +141,36 @@ class Eterna(wiring.Component):
         m = Module()
 
         m.d.comb += [
-            self._net_1723.eq(Buf(((self.net_319) | (self.net_20) | (self.net_380) | (self.net_832)))),
             self._net_1669.eq(~((self._net_1735) & (self.I))),
         ]
 
         m.d.sync += [
-            self._net_1640.eq(~(((~(self._net_1640)) & (self._net_1669)) | (Mux((~(self.net_934)), (~(self._net_1640)), (self.net_1526))))),
-            self._net_1495.eq((((self.net_1526) & (self.net_934) & (Mux((self._net_1640), ((self._net_1735) | (self.I)), (self._net_1669)))) | (self._net_1495))),
-            self._net_1735.eq((((~(self.net_934)) & (self._net_1735)) | (((((self._net_1640) | (self._net_1669)) & ((self._net_1735) | (self.I)) & (self.net_934))) & (~(self.net_1526))))),
+            self._net_1640.eq(~(((~(self._net_1640)) & (self._net_1669)) | (Mux((~(self.enable)), (~(self._net_1640)), (self.x_overflow))))),
+            self._net_1495.eq((((self.x_overflow) & (self.enable) & (Mux((self._net_1640), ((self._net_1735) | (self.I)), (self._net_1669)))) | (self._net_1495))),
+            self._net_1735.eq((((~(self.enable)) & (self._net_1735)) | (((((self._net_1640) | (self._net_1669)) & ((self._net_1735) | (self.I)) & (self.enable))) & (~(self.x_overflow))))),
         ]
 
         m.d.comb += [
-            self.net_1723.eq(self._net_1723),
-            self.net_1719.eq((self.net_319) | (self.net_20) | (self.net_380) | (self.net_832)),
-            self.net_1628.eq(1),
-            self.net_1738.eq((self.net_319) | (self.net_380) | ~(self.net_832) | ~(self.net_20)),
             self.net_1557.eq(~(self._net_1495)),
+        ]
+
+        return m
+
+class EternaComb(wiring.Component):
+    x: In(description=4)
+    net_1723: Out(1)
+    net_1719: Out(1)
+    net_1628: Out(1)
+    net_1738: Out(1)
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.d.comb += [
+            self.net_1723.eq(Buf(self.x != 0)),
+            self.net_1719.eq(self.x != 0),
+            self.net_1628.eq(1),
+            self.net_1738.eq(self.x != 10),
         ]
 
         return m
@@ -998,6 +1003,7 @@ class puzzle(wiring.Component):
         m.submodules.y_counter = Counter11()
         m.submodules.snowpoint = Snowpoint()
         m.submodules.eterna = Eterna()
+        m.submodules.eterna_comb = EternaComb()
         m.submodules.oreburgh = Oreburgh()
         m.submodules.celestic = Celestic()
         m.submodules.hearthome = Hearthome()
@@ -1022,18 +1028,15 @@ class puzzle(wiring.Component):
             m.submodules.y_counter.enable.eq(m.submodules.done_controller.enable_gated),
             m.submodules.y_counter.increment.eq(m.submodules.x_counter.overflow),
             m.submodules.snowpoint.net_934.eq(m.submodules.done_controller.enable_gated),
-            m.submodules.snowpoint.net_1723.eq(m.submodules.eterna.net_1723),
-            m.submodules.snowpoint.net_1719.eq(m.submodules.eterna.net_1719),
+            m.submodules.snowpoint.net_1723.eq(m.submodules.eterna_comb.net_1723),
+            m.submodules.snowpoint.net_1719.eq(m.submodules.eterna_comb.net_1719),
             m.submodules.snowpoint.I.eq(self.I),
-            m.submodules.snowpoint.net_1628.eq(m.submodules.eterna.net_1628),
-            m.submodules.snowpoint.net_1738.eq(m.submodules.eterna.net_1738),
-            m.submodules.eterna.net_1526.eq(m.submodules.x_counter.overflow),
-            m.submodules.eterna.net_934.eq(m.submodules.done_controller.enable_gated),
-            m.submodules.eterna.net_832.eq(m.submodules.x_counter.count[3]),
-            m.submodules.eterna.net_20.eq(m.submodules.x_counter.count[1]),
-            m.submodules.eterna.net_380.eq(m.submodules.x_counter.count[2]),
-            m.submodules.eterna.net_319.eq(m.submodules.x_counter.count[0]),
+            m.submodules.snowpoint.net_1628.eq(m.submodules.eterna_comb.net_1628),
+            m.submodules.snowpoint.net_1738.eq(m.submodules.eterna_comb.net_1738),
+            m.submodules.eterna.enable.eq(m.submodules.done_controller.enable_gated),
             m.submodules.eterna.I.eq(self.I),
+            m.submodules.eterna.x_overflow.eq(m.submodules.x_counter.overflow),
+            m.submodules.eterna_comb.x.eq(m.submodules.x_counter.count),
             m.submodules.oreburgh.net_934.eq(m.submodules.done_controller.enable_gated),
             m.submodules.oreburgh.I.eq(self.I),
             m.submodules.celestic.net_934.eq(m.submodules.done_controller.enable_gated),
@@ -1192,10 +1195,10 @@ class puzzle(wiring.Component):
             self.net_377.eq(m.submodules.y_counter.count[1]),
             self.net_2259.eq(m.submodules.snowpoint.net_2259),
             self.net_2505.eq(m.submodules.hearthome_big_and.result),
-            self.net_1723.eq(m.submodules.eterna.net_1723),
-            self.net_1719.eq(m.submodules.eterna.net_1719),
-            self.net_1628.eq(m.submodules.eterna.net_1628),
-            self.net_1738.eq(m.submodules.eterna.net_1738),
+            self.net_1723.eq(m.submodules.eterna_comb.net_1723),
+            self.net_1719.eq(m.submodules.eterna_comb.net_1719),
+            self.net_1628.eq(m.submodules.eterna_comb.net_1628),
+            self.net_1738.eq(m.submodules.eterna_comb.net_1738),
             self.net_1557.eq(m.submodules.eterna.net_1557),
             self.net_719.eq(m.submodules.oreburgh.net_719),
             self.net_1084.eq(m.submodules.oreburgh.net_1084),
