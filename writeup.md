@@ -149,9 +149,26 @@
     * This is the property that can give you the almost success output if you fulfill all other criteria
     * The combinatorial bits got absorbed into Eterna (the RowChecker)
     * There appears to be some porentially interesting development history here, see the note in EdgeChecker
+2. Solved Oreburgh
+    * It asserts that there is exactly 22 bits set
+        * Row, column and region properties already assert that there is 2 bits set each in 11 regions
+    * It also triggers easter eggs on completely full or empty grids
+3. To summarize
+    * To get a solve:
+        * Every row has 2 bits set
+        * Every column has 2 bits set
+        * Every region has 2 bits set
+        * No two adjacent bits are set
+    * To get an easter egg:
+        * Every row has 2 bits set
+        * Every column has 2 bits set
+        * Every region has 2 bits set
+        * There are 2 adjacent bits that are set
 
 # Register of Easter Eggs
 * Jane Street logo on met2 (I suppose it's an easter egg, since it wasn't in the PNG, but not exactly a major achievement to find it)
 * JSC image used for the Sunyshore module - though this may be actually shaping the solution via Pastoria, I don't know.
 * The odd history discoverd in the EdgeChecker
 * The near-miss output from the SuccessController
+* Supplying an all-0 grid prints "EMPTY SKY"
+* Supplying an all-1 grid prings "BIG BANG"

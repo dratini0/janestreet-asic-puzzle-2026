@@ -153,54 +153,35 @@ class RowChecker(wiring.Component):
 
         return m
 
-class Oreburgh(wiring.Component):
-    net_934: In(1)
+class PopCntChecker(wiring.Component):
+    """
+    Asserts that there are exactly 22 bits set
+    
+    This is redundan with the row, column, and region properties.
+
+    Also triggers an easter egg when empty or full grids are supplied
+    """
+    enable: In(1)
     I: In(1)
-    net_719: Out(1)
-    net_1084: Out(1)
-    net_791: Out(1)
+    result: Out(1)
+    full: Out(1)
+    empty: Out(1)
 
     def __init__(self):
-        self._net_803 = Signal(1)
-        self._net_971 = Signal(1)
-        self._net_888 = Signal(1)
-        self._net_800 = Signal(1)
-        self._net_802 = Signal(1, init=0)
-        self._net_686 = Signal(1, init=0)
-        self._net_684 = Signal(1, init=0)
-        self._net_1104 = Signal(1, init=0)
-        self._net_982 = Signal(1, init=0)
-        self._net_769 = Signal(1, init=0)
-        self._net_612 = Signal(1, init=0)
-        self._net_919 = Signal(1, init=0)
+        self._counter = Signal(8, init=0)
 
         super().__init__()
 
     def elaborate(self, platform):
         m = Module()
 
-        m.d.comb += [
-            self._net_803.eq((self._net_1104) & (self.I) & (self.net_934)),
-            self._net_971.eq((self._net_684) & (self._net_686) & (self._net_802)),
-            self._net_888.eq((self._net_612) & (self._net_769)),
-            self._net_800.eq(~((self._net_803) & (self._net_971))),
-        ]
-
-        m.d.sync += [
-            self._net_802.eq((((self._net_802) | ((self._net_684) & (self._net_686) & (self._net_803))) & (self._net_800))),
-            self._net_686.eq(~((self._net_684) & (self._net_686) & (self._net_803)) & ((((self._net_684) & (self._net_803)) | (self._net_686)))),
-            self._net_684.eq((((self.I) & (self.net_934) & (~(self._net_684) & (self._net_1104))) | ((~(self._net_803)) & (self._net_684)))),
-            self._net_1104.eq(~((self._net_803) | (~(((self.I) & (self.net_934)) | (self._net_1104))))),
-            self._net_982.eq((self._net_982) ^ ((self._net_919) & (self._net_888) & (self._net_803) & (self._net_971))),
-            self._net_769.eq((((~((self._net_612) & (self._net_769))) | (self._net_800)) & ((((self._net_612) & (self._net_803) & (self._net_971)) | (self._net_769))))),
-            self._net_612.eq(~((self._net_612) ^ (self._net_800))),
-            self._net_919.eq(~((self._net_919) & (self._net_888) & (self._net_803) & (self._net_971)) & ((((self._net_888) & (self._net_803) & (self._net_971)) | (self._net_919)))),
-        ]
+        with m.If(self.enable & self.I):
+            m.d.sync += self._counter.eq(self._counter + 1)
 
         m.d.comb += [
-            self.net_719.eq((self._net_684) & (self._net_686) & (self._net_612) & (~((self._net_769) | (self._net_919) | ((self._net_1104) | (self._net_802) | (self._net_982))))),
-            self.net_1084.eq((~(self._net_686) & ~(self._net_982) & (self._net_919) & (self._net_802)) & (~(self._net_684) & (self._net_1104)) & (self._net_888)),
-            self.net_791.eq(~((self._net_684) | (self._net_686) | (self._net_612) | ~(~((self._net_769) | (self._net_919) | ((self._net_1104) | (self._net_802) | (self._net_982)))))),
+            self.result.eq(self._counter == 22),
+            self.full.eq(self._counter == 121),
+            self.empty.eq(self._counter == 0),
         ]
 
         return m
@@ -258,7 +239,7 @@ class SuccessController(wiring.Component):
     column_property: In(1)
     region_property: In(1)
     row_property: In(1)
-    oreburgh_property: In(1)
+    popcnt_property: In(1)
 
     done_delayed: Out(1, init=0)
     almost_success: Out(1, init=0)
@@ -272,8 +253,8 @@ class SuccessController(wiring.Component):
 
         with m.If(self.done & ~self.done_delayed):
             m.d.sync += [
-                self.success.eq(self.adjacency_property & self.row_property & self.oreburgh_property & self.region_property & self.column_property),
-                self.almost_success.eq(~self.adjacency_property & self.row_property & self.oreburgh_property & self.region_property & self.column_property),
+                self.success.eq(self.adjacency_property & self.row_property & self.popcnt_property & self.region_property & self.column_property),
+                self.almost_success.eq(~self.adjacency_property & self.row_property & self.popcnt_property & self.region_property & self.column_property),
             ]
 
         return m
@@ -809,7 +790,7 @@ class puzzle(wiring.Component):
         m.submodules.adjacency_checker = AdjacencyChecker()
         m.submodules.row_checker = RowChecker()
         m.submodules.edge_checker = EdgeChecker()
-        m.submodules.oreburgh = Oreburgh()
+        m.submodules.popcnt_checker = PopCntChecker()
         m.submodules.column_checker = ColumnChecker()
         m.submodules.region_checker = ColumnChecker()
         m.submodules.success_controller = SuccessController()
@@ -838,8 +819,8 @@ class puzzle(wiring.Component):
             m.submodules.row_checker.I.eq(self.I),
             m.submodules.row_checker.x_overflow.eq(m.submodules.x_counter.overflow),
             m.submodules.edge_checker.x.eq(m.submodules.x_counter.count),
-            m.submodules.oreburgh.net_934.eq(m.submodules.done_controller.enable_gated),
-            m.submodules.oreburgh.I.eq(self.I),
+            m.submodules.popcnt_checker.enable.eq(m.submodules.done_controller.enable_gated),
+            m.submodules.popcnt_checker.I.eq(self.I),
             m.submodules.column_checker.enable.eq(m.submodules.done_controller.enable_gated),
             m.submodules.column_checker.I.eq(self.I),
             m.submodules.column_checker.x.eq(m.submodules.x_counter.count),
@@ -851,11 +832,11 @@ class puzzle(wiring.Component):
             m.submodules.success_controller.column_property.eq(m.submodules.column_checker.result),
             m.submodules.success_controller.region_property.eq(m.submodules.region_checker.result),
             m.submodules.success_controller.row_property.eq(m.submodules.row_checker.result),
-            m.submodules.success_controller.oreburgh_property.eq(m.submodules.oreburgh.net_719),
+            m.submodules.success_controller.popcnt_property.eq(m.submodules.popcnt_checker.result),
             m.submodules.output_mtcoronet.net_3771.eq(m.submodules.success_controller.done_delayed),
             m.submodules.output_mtcoronet.net_3920.eq(m.submodules.success_controller.almost_success),
-            m.submodules.output_mtcoronet.net_1084.eq(m.submodules.oreburgh.net_1084),
-            m.submodules.output_mtcoronet.net_791.eq(m.submodules.oreburgh.net_791),
+            m.submodules.output_mtcoronet.net_1084.eq(m.submodules.popcnt_checker.full),
+            m.submodules.output_mtcoronet.net_791.eq(m.submodules.popcnt_checker.empty),
             m.submodules.output_mtcoronet.net_3617.eq(m.submodules.output_eternaforest.net_3617),
             m.submodules.output_mtcoronet.net_3516.eq(m.submodules.output_eternaforest.net_3516),
             m.submodules.output_mtcoronet.net_3435.eq(m.submodules.output_eternaforest.net_3435),
@@ -957,9 +938,9 @@ class puzzle(wiring.Component):
             self.net_1628.eq(m.submodules.edge_checker.top_available),
             self.net_1738.eq(m.submodules.edge_checker.top_right_available),
             self.net_1557.eq(m.submodules.row_checker.result),
-            self.net_719.eq(m.submodules.oreburgh.net_719),
-            self.net_1084.eq(m.submodules.oreburgh.net_1084),
-            self.net_791.eq(m.submodules.oreburgh.net_791),
+            self.net_719.eq(m.submodules.popcnt_checker.result),
+            self.net_1084.eq(m.submodules.popcnt_checker.full),
+            self.net_791.eq(m.submodules.popcnt_checker.empty),
             self.net_343.eq(m.submodules.region_checker.result),
             self.net_2386.eq(m.submodules.column_checker.results[10]),
             self.net_2463.eq(m.submodules.column_checker.results[9]),
