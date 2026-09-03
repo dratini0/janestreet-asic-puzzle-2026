@@ -105,7 +105,7 @@ class Snowpoint(wiring.Component):
 
         return m
 
-class Eterna(wiring.Component):
+class RowChecker(wiring.Component):
     """Every line has exactly 2 bits set"""
     enable: In(1)
     I: In(1)
@@ -256,9 +256,9 @@ class ColumnChecker(wiring.Component):
 class SuccessController(wiring.Component):
     done: In(1)
     snowpoint_property: In(1)
-    hearthome_property: In(1)
-    pastoria_property: In(1)
-    eterna_property: In(1)
+    column_property: In(1)
+    region_property: In(1)
+    row_property: In(1)
     oreburgh_property: In(1)
 
     done_delayed: Out(1, init=0)
@@ -273,8 +273,8 @@ class SuccessController(wiring.Component):
 
         with m.If(self.done & ~self.done_delayed):
             m.d.sync += [
-                self.success.eq(self.snowpoint_property & self.eterna_property & self.oreburgh_property & self.pastoria_property & self.hearthome_property),
-                self.almost_success.eq(~self.snowpoint_property & self.eterna_property & self.oreburgh_property & self.pastoria_property & self.hearthome_property),
+                self.success.eq(self.snowpoint_property & self.row_property & self.oreburgh_property & self.region_property & self.column_property),
+                self.almost_success.eq(~self.snowpoint_property & self.row_property & self.oreburgh_property & self.region_property & self.column_property),
             ]
 
         return m
@@ -641,8 +641,10 @@ class Output_LakeValor(wiring.Component):
 
         return m
 
-class Sunyshore(wiring.Component):
+class Regions(wiring.Component):
     """
+    Decides which region of the image a particular bit is in
+
     Represents an image with the letters JSC written across it
 
     JSC presumably stands for Jane Street Capital
@@ -650,6 +652,8 @@ class Sunyshore(wiring.Component):
     This permutation of bits was chosen because:
     * The letters J, S and C, correspond nicely to values 0, 1 and 2
     * The maximum value of the image is 10, much like the counters
+
+    Actually, bit order doesn't really matter, but it does make the checker look nicer
     """
     x: In(4)
     y: In(4)
@@ -804,7 +808,7 @@ class puzzle(wiring.Component):
         m.submodules.x_counter = Counter11()
         m.submodules.y_counter = Counter11()
         m.submodules.snowpoint = Snowpoint()
-        m.submodules.eterna = Eterna()
+        m.submodules.row_checker = RowChecker()
         m.submodules.eterna_comb = EternaComb()
         m.submodules.oreburgh = Oreburgh()
         m.submodules.column_checker = ColumnChecker()
@@ -815,7 +819,7 @@ class puzzle(wiring.Component):
         m.submodules.output_lakeacuity = Output_LakeAcuity()
         m.submodules.output_lakeverity = Output_LakeVerity()
         m.submodules.output_lakevalor = Output_LakeValor()
-        m.submodules.sunyshore = Sunyshore()
+        m.submodules.regions = Regions()
 
         m.d.comb += [
             m.submodules.done_controller.y_overflow.eq(m.submodules.y_counter.overflow),
@@ -831,9 +835,9 @@ class puzzle(wiring.Component):
             m.submodules.snowpoint.I.eq(self.I),
             m.submodules.snowpoint.net_1628.eq(m.submodules.eterna_comb.net_1628),
             m.submodules.snowpoint.net_1738.eq(m.submodules.eterna_comb.net_1738),
-            m.submodules.eterna.enable.eq(m.submodules.done_controller.enable_gated),
-            m.submodules.eterna.I.eq(self.I),
-            m.submodules.eterna.x_overflow.eq(m.submodules.x_counter.overflow),
+            m.submodules.row_checker.enable.eq(m.submodules.done_controller.enable_gated),
+            m.submodules.row_checker.I.eq(self.I),
+            m.submodules.row_checker.x_overflow.eq(m.submodules.x_counter.overflow),
             m.submodules.eterna_comb.x.eq(m.submodules.x_counter.count),
             m.submodules.oreburgh.net_934.eq(m.submodules.done_controller.enable_gated),
             m.submodules.oreburgh.I.eq(self.I),
@@ -842,12 +846,12 @@ class puzzle(wiring.Component):
             m.submodules.column_checker.x.eq(m.submodules.x_counter.count),
             m.submodules.region_checker.enable.eq(m.submodules.done_controller.enable_gated),
             m.submodules.region_checker.I.eq(self.I),
-            m.submodules.region_checker.x.eq(m.submodules.sunyshore.out),
+            m.submodules.region_checker.x.eq(m.submodules.regions.out),
             m.submodules.success_controller.done.eq(m.submodules.done_controller.done),
             m.submodules.success_controller.snowpoint_property.eq(m.submodules.snowpoint.net_2259),
-            m.submodules.success_controller.hearthome_property.eq(m.submodules.column_checker.result),
-            m.submodules.success_controller.pastoria_property.eq(m.submodules.region_checker.result),
-            m.submodules.success_controller.eterna_property.eq(m.submodules.eterna.result),
+            m.submodules.success_controller.column_property.eq(m.submodules.column_checker.result),
+            m.submodules.success_controller.region_property.eq(m.submodules.region_checker.result),
+            m.submodules.success_controller.row_property.eq(m.submodules.row_checker.result),
             m.submodules.success_controller.oreburgh_property.eq(m.submodules.oreburgh.net_719),
             m.submodules.output_mtcoronet.net_3771.eq(m.submodules.success_controller.done_delayed),
             m.submodules.output_mtcoronet.net_3920.eq(m.submodules.success_controller.almost_success),
@@ -917,8 +921,8 @@ class puzzle(wiring.Component):
             m.submodules.output_lakevalor.net_1505.eq(m.submodules.output_mtcoronet.net_1505),
             m.submodules.output_lakevalor.net_1363.eq(m.submodules.output_mtcoronet.net_1363),
             m.submodules.output_lakevalor.net_1447.eq(self.net_1447),
-            m.submodules.sunyshore.x.eq(m.submodules.x_counter.count),
-            m.submodules.sunyshore.y.eq(m.submodules.y_counter.count),
+            m.submodules.regions.x.eq(m.submodules.x_counter.count),
+            m.submodules.regions.y.eq(m.submodules.y_counter.count),
         ]
 
         m.d.comb += [
@@ -953,7 +957,7 @@ class puzzle(wiring.Component):
             self.net_1719.eq(m.submodules.eterna_comb.net_1719),
             self.net_1628.eq(m.submodules.eterna_comb.net_1628),
             self.net_1738.eq(m.submodules.eterna_comb.net_1738),
-            self.net_1557.eq(m.submodules.eterna.result),
+            self.net_1557.eq(m.submodules.row_checker.result),
             self.net_719.eq(m.submodules.oreburgh.net_719),
             self.net_1084.eq(m.submodules.oreburgh.net_1084),
             self.net_791.eq(m.submodules.oreburgh.net_791),
@@ -1030,10 +1034,10 @@ class puzzle(wiring.Component):
             self.net_1559.eq(m.submodules.output_lakevalor.net_1559),
             self.net_1629.eq(m.submodules.output_lakevalor.net_1629),
             self.net_1472.eq(m.submodules.output_lakevalor.net_1472),
-            self.net_736.eq(m.submodules.sunyshore.out[0]),
-            self.net_1034.eq(m.submodules.sunyshore.out[3]),
-            self.net_857.eq(m.submodules.sunyshore.out[1]),
-            self.net_985.eq(m.submodules.sunyshore.out[2]),
+            self.net_736.eq(m.submodules.regions.out[0]),
+            self.net_1034.eq(m.submodules.regions.out[3]),
+            self.net_857.eq(m.submodules.regions.out[1]),
+            self.net_985.eq(m.submodules.regions.out[2]),
         ]
 
         return m
