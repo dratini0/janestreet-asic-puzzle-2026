@@ -160,4 +160,94 @@ async def random_inputs(dut):
         for _ in range(16):
             await FallingEdge(dut.clk)
 
-    # Validated by inspection
+
+async def test_with_data(dut, data: list[list[int]]):
+    c = Clock(dut.clk, 10, "ns")
+    c.start()
+
+    dut.rst_n.value = 0
+    dut.enable.value = 0
+    dut.I.value = 0
+
+    cocotb.start_soon(check_equivalence(dut))
+
+    dut.rst_n.value = 0
+    await FallingEdge(dut.clk)
+    await FallingEdge(dut.clk)
+    await FallingEdge(dut.clk)
+
+    dut.rst_n.value = 1
+
+    await FallingEdge(dut.clk)
+    dut.enable.value = 1
+    assert len(data) == 11
+    for line in data:
+        assert len(line) == 11
+        for bit in line:
+            dut.I.value = bit
+            await FallingEdge(dut.clk)
+    dut.enable.value = 0
+    dut.I.value = 0
+
+    for _ in range(16):
+        await FallingEdge(dut.clk)
+
+
+@cocotb.test()
+async def eterna_pass(dut):
+    await test_with_data(
+        dut,
+        [
+            [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
+            [0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0],
+            [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ],
+    )
+
+
+@cocotb.test()
+async def eterna_too_many(dut):
+    await test_with_data(
+        dut,
+        [
+            [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
+            [0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1],  # too many
+            [0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0],
+            [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ],
+    )
+
+
+@cocotb.test()
+async def eterna_too_few(dut):
+    await test_with_data(
+        dut,
+        [
+            [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+            [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
+            [0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+            [0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0],
+            [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],  # too few
+            [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        ],
+    )

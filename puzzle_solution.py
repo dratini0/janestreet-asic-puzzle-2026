@@ -124,35 +124,32 @@ class Snowpoint(wiring.Component):
         return m
 
 class Eterna(wiring.Component):
+    """Every line has exactly 2 bits set"""
     enable: In(1)
     I: In(1)
     x_overflow: In(1)
-    net_1557: Out(1)
+    result: Out(1, init=1)
 
     def __init__(self):
-        self._net_1669 = Signal(1)
-        self._net_1640 = Signal(1, init=0)
-        self._net_1495 = Signal(1, init=0)
-        self._net_1735 = Signal(1, init=0)
+        self._counter = Signal(2, init=0)
+        self._counter_next = Signal(2)
 
         super().__init__()
 
     def elaborate(self, platform):
         m = Module()
 
-        m.d.comb += [
-            self._net_1669.eq(~((self._net_1735) & (self.I))),
-        ]
+        with m.If(self._counter == 3):
+            m.d.comb += self._counter_next.eq(3)
+        with m.Else():
+            m.d.comb += self._counter_next.eq(self._counter + self.I)
 
-        m.d.sync += [
-            self._net_1640.eq(~(((~(self._net_1640)) & (self._net_1669)) | (Mux((~(self.enable)), (~(self._net_1640)), (self.x_overflow))))),
-            self._net_1495.eq((((self.x_overflow) & (self.enable) & (Mux((self._net_1640), ((self._net_1735) | (self.I)), (self._net_1669)))) | (self._net_1495))),
-            self._net_1735.eq((((~(self.enable)) & (self._net_1735)) | (((((self._net_1640) | (self._net_1669)) & ((self._net_1735) | (self.I)) & (self.enable))) & (~(self.x_overflow))))),
-        ]
-
-        m.d.comb += [
-            self.net_1557.eq(~(self._net_1495)),
-        ]
+        with m.If(self.enable):
+            m.d.sync += self._counter.eq(self._counter_next)
+            with m.If(self.x_overflow):
+                m.d.sync += self._counter.eq(0)
+                with m.If(self._counter_next != 2):
+                    m.d.sync += self.result.eq(0)
 
         return m
 
@@ -1093,7 +1090,7 @@ class puzzle(wiring.Component):
             m.submodules.success_controller.snowpoint_property.eq(m.submodules.snowpoint.net_2259),
             m.submodules.success_controller.hearthome_property.eq(m.submodules.hearthome_big_and.result),
             m.submodules.success_controller.pastoria_property.eq(m.submodules.pastoria_big_and.result),
-            m.submodules.success_controller.eterna_property.eq(m.submodules.eterna.net_1557),
+            m.submodules.success_controller.eterna_property.eq(m.submodules.eterna.result),
             m.submodules.success_controller.oreburgh_property.eq(m.submodules.oreburgh.net_719),
             m.submodules.output_mtcoronet.net_3771.eq(m.submodules.success_controller.done_delayed),
             m.submodules.output_mtcoronet.net_3920.eq(m.submodules.success_controller.almost_success),
@@ -1199,7 +1196,7 @@ class puzzle(wiring.Component):
             self.net_1719.eq(m.submodules.eterna_comb.net_1719),
             self.net_1628.eq(m.submodules.eterna_comb.net_1628),
             self.net_1738.eq(m.submodules.eterna_comb.net_1738),
-            self.net_1557.eq(m.submodules.eterna.net_1557),
+            self.net_1557.eq(m.submodules.eterna.result),
             self.net_719.eq(m.submodules.oreburgh.net_719),
             self.net_1084.eq(m.submodules.oreburgh.net_1084),
             self.net_791.eq(m.submodules.oreburgh.net_791),
