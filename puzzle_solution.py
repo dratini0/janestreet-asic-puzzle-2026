@@ -50,25 +50,6 @@ class Counter11(wiring.Component):
 
         return m
 
-class BigAnd(wiring.Component):
-    """
-    A big and over 11 conditions
-
-    Sandgem for Pastoria, and a chunk of Snowpoint for Celestic/Hearthome/Solaceon
-
-    Probably would be nice to absorb into Pastoria and Hearthome when those are done
-    """
-    conditions: In(11)
-    result: Out(1)
-
-    def elaborate(self, platform):
-        m = Module()
-
-        m.d.comb += self.result.eq(self.conditions.all())
-
-        return m
-
-
 class Snowpoint(wiring.Component):
     net_934: In(1)
     net_1723: In(1)
@@ -269,95 +250,6 @@ class ColumnChecker(wiring.Component):
             ]
 
         m.d.comb += self.result.eq(self.results.all())
-
-        return m
-
-class Pastoria(wiring.Component):
-    net_934: In(1)
-    I: In(1)
-    net_736: In(1)
-    net_1034: In(1)
-    net_857: In(1)
-    net_985: In(1)
-    net_204: Out(1)
-    net_203: Out(1)
-    net_294: Out(1)
-    net_226: Out(1)
-    net_545: Out(1)
-    net_1185: Out(1)
-    net_341: Out(1)
-    net_401: Out(1)
-    net_399: Out(1)
-    net_405: Out(1)
-    net_349: Out(1)
-
-    def __init__(self):
-        self._net_2038 = Signal(1, init=0)
-        self._net_2221 = Signal(1, init=0)
-        self._net_1965 = Signal(1, init=0)
-        self._net_2204 = Signal(1, init=0)
-        self._net_2017 = Signal(1, init=0)
-        self._net_1921 = Signal(1, init=0)
-        self._net_1967 = Signal(1, init=0)
-        self._net_840 = Signal(1, init=0)
-        self._net_1488 = Signal(1, init=0)
-        self._net_1748 = Signal(1, init=0)
-        self._net_1593 = Signal(1, init=0)
-        self._net_1856 = Signal(1, init=0)
-        self._net_1193 = Signal(1, init=0)
-        self._net_1293 = Signal(1, init=0)
-        self._net_1522 = Signal(1, init=0)
-        self._net_1439 = Signal(1, init=0)
-        self._net_1672 = Signal(1, init=0)
-        self._net_1247 = Signal(1, init=0)
-        self._net_1288 = Signal(1, init=0)
-        self._net_1191 = Signal(1, init=0)
-        self._net_1226 = Signal(1, init=0)
-        self._net_1032 = Signal(1, init=0)
-
-        super().__init__()
-
-    def elaborate(self, platform):
-        m = Module()
-
-        m.d.sync += [
-            self._net_2038.eq(~(~(self._net_2038) & (~((self.I) & (self.net_934) & (self._net_1965) & (~(self.net_857) & ~(self.net_985) & (self.net_1034) & (self.net_736)))))),
-            self._net_2221.eq(~(~(self._net_2221) & (~((self.I) & (self.net_934) & (self._net_2204) & (~(self.net_736) & ~(self.net_985) & (self.net_1034) & (self.net_857)))))),
-            self._net_1965.eq((((self._net_2038) | (~((self.I) & (self.net_934) & (self._net_1965) & (~(self.net_857) & ~(self.net_985) & (self.net_1034) & (self.net_736))))) & ((((self.I) & (self.net_934) & (~(self.net_857) & ~(self.net_985) & (self.net_1034) & (self.net_736))) | (self._net_1965))))),
-            self._net_2204.eq((((self._net_2221) | (~((self.I) & (self.net_934) & (self._net_2204) & (~(self.net_736) & ~(self.net_985) & (self.net_1034) & (self.net_857))))) & ((((self.I) & (self.net_934) & (~(self.net_736) & ~(self.net_985) & (self.net_1034) & (self.net_857))) | (self._net_2204))))),
-            self._net_2017.eq((((self._net_2017) | (~(((self.net_857) | (self.net_736) | (self.net_985) | ~(self.net_1034)) | (~((self.I) & (self.net_934)))))) & ((self._net_1967) | (~(self._net_2017)) | ((self.net_857) | (self.net_736) | (self.net_985) | ~(self.net_1034)) | (~((self.I) & (self.net_934)))))),
-            self._net_1921.eq((((self._net_1856) | (~((self.I) & (self.net_934) & (self._net_1921) & (~(self.net_1034) & (self.net_985) & (self.net_736) & (self.net_857))))) & ((((self.I) & (self.net_934) & (~(self.net_1034) & (self.net_985) & (self.net_736) & (self.net_857))) | (self._net_1921))))),
-            self._net_1967.eq((((self._net_2017) & (~(((self.net_857) | (self.net_736) | (self.net_985) | ~(self.net_1034)) | (~((self.I) & (self.net_934)))))) | (self._net_1967))),
-            self._net_840.eq(~(~(self._net_840) & (~((self.I) & (self.net_934) & (self._net_1032) & (~((self.net_857) | (self.net_736) | (self.net_1034) | (self.net_985))))))),
-            self._net_1488.eq((((self._net_1522) & (~(((self.net_857) | (self.net_736) | (self.net_1034) | ~(self.net_985)) | (~((self.I) & (self.net_934)))))) | (self._net_1488))),
-            self._net_1748.eq(~(~(self._net_1748) & (~((self.I) & (self.net_934) & (self._net_1672) & (~(self.net_736) & ~(self.net_1034) & (self.net_985) & (self.net_857)))))),
-            self._net_1593.eq(~(~(self._net_1593) & (~((self.I) & (self.net_934) & (self._net_1439) & (~(self.net_857) & ~(self.net_1034) & (self.net_985) & (self.net_736)))))),
-            self._net_1856.eq(~(~(self._net_1856) & (~((self.I) & (self.net_934) & (self._net_1921) & (~(self.net_1034) & (self.net_985) & (self.net_736) & (self.net_857)))))),
-            self._net_1193.eq((((self._net_1193) | (~(((self.net_736) | (self.net_1034) | (self.net_985) | ~(self.net_857)) | (~((self.I) & (self.net_934)))))) & ((self._net_1288) | (~(self._net_1193)) | ((self.net_736) | (self.net_1034) | (self.net_985) | ~(self.net_857)) | (~((self.I) & (self.net_934)))))),
-            self._net_1293.eq((((self._net_1247) | (~((self.I) & (self.net_934) & (self._net_1293) & (~(self.net_1034) & ~(self.net_985) & (self.net_736) & (self.net_857))))) & ((((self.I) & (self.net_934) & (~(self.net_1034) & ~(self.net_985) & (self.net_736) & (self.net_857))) | (self._net_1293))))),
-            self._net_1522.eq((((self._net_1522) | (~(((self.net_857) | (self.net_736) | (self.net_1034) | ~(self.net_985)) | (~((self.I) & (self.net_934)))))) & ((self._net_1488) | (~(self._net_1522)) | ((self.net_857) | (self.net_736) | (self.net_1034) | ~(self.net_985)) | (~((self.I) & (self.net_934)))))),
-            self._net_1439.eq((((self._net_1593) | (~((self.I) & (self.net_934) & (self._net_1439) & (~(self.net_857) & ~(self.net_1034) & (self.net_985) & (self.net_736))))) & ((((self.I) & (self.net_934) & (~(self.net_857) & ~(self.net_1034) & (self.net_985) & (self.net_736))) | (self._net_1439))))),
-            self._net_1672.eq((((self._net_1748) | (~((self.I) & (self.net_934) & (self._net_1672) & (~(self.net_736) & ~(self.net_1034) & (self.net_985) & (self.net_857))))) & ((((self.I) & (self.net_934) & (~(self.net_736) & ~(self.net_1034) & (self.net_985) & (self.net_857))) | (self._net_1672))))),
-            self._net_1247.eq(~(~(self._net_1247) & (~((self.I) & (self.net_934) & (self._net_1293) & (~(self.net_1034) & ~(self.net_985) & (self.net_736) & (self.net_857)))))),
-            self._net_1288.eq((((self._net_1193) & (~(((self.net_736) | (self.net_1034) | (self.net_985) | ~(self.net_857)) | (~((self.I) & (self.net_934)))))) | (self._net_1288))),
-            self._net_1191.eq((((self._net_1226) & (~(((self.net_857) | (self.net_1034) | (self.net_985) | ~(self.net_736)) | (~((self.I) & (self.net_934)))))) | (self._net_1191))),
-            self._net_1226.eq((((self._net_1226) | (~(((self.net_857) | (self.net_1034) | (self.net_985) | ~(self.net_736)) | (~((self.I) & (self.net_934)))))) & ((self._net_1191) | (~(self._net_1226)) | ((self.net_857) | (self.net_1034) | (self.net_985) | ~(self.net_736)) | (~((self.I) & (self.net_934)))))),
-            self._net_1032.eq((((self._net_840) | (~((self.I) & (self.net_934) & (self._net_1032) & (~((self.net_857) | (self.net_736) | (self.net_1034) | (self.net_985)))))) & ((((self.I) & (self.net_934) & (~((self.net_857) | (self.net_736) | (self.net_1034) | (self.net_985)))) | (self._net_1032))))),
-        ]
-
-        m.d.comb += [
-            self.net_204.eq(~(self._net_1921) & (self._net_1856)),
-            self.net_203.eq(~(self._net_1672) & (self._net_1748)),
-            self.net_294.eq((self._net_1488) & (~(self._net_1522))),
-            self.net_226.eq(~(self._net_1439) & (self._net_1593)),
-            self.net_545.eq(~(self._net_2204) & (self._net_2221)),
-            self.net_1185.eq(~(self._net_1965) & (self._net_2038)),
-            self.net_341.eq((self._net_1967) & (~(self._net_2017))),
-            self.net_401.eq(~(self._net_1293) & (self._net_1247)),
-            self.net_399.eq((self._net_1288) & (~(self._net_1193))),
-            self.net_405.eq(~(self._net_1032) & (self._net_840)),
-            self.net_349.eq((self._net_1191) & (~(self._net_1226))),
-        ]
 
         return m
 
@@ -916,8 +808,7 @@ class puzzle(wiring.Component):
         m.submodules.eterna_comb = EternaComb()
         m.submodules.oreburgh = Oreburgh()
         m.submodules.column_checker = ColumnChecker()
-        m.submodules.pastoria = Pastoria()
-        m.submodules.pastoria_big_and = BigAnd()
+        m.submodules.region_checker = ColumnChecker()
         m.submodules.success_controller = SuccessController()
         m.submodules.output_mtcoronet = Output_MtCoronet()
         m.submodules.output_eternaforest = Output_EternaForest()
@@ -949,29 +840,13 @@ class puzzle(wiring.Component):
             m.submodules.column_checker.enable.eq(m.submodules.done_controller.enable_gated),
             m.submodules.column_checker.I.eq(self.I),
             m.submodules.column_checker.x.eq(m.submodules.x_counter.count),
-            m.submodules.pastoria.net_934.eq(m.submodules.done_controller.enable_gated),
-            m.submodules.pastoria.I.eq(self.I),
-            m.submodules.pastoria.net_736.eq(m.submodules.sunyshore.out[0]),
-            m.submodules.pastoria.net_1034.eq(m.submodules.sunyshore.out[3]),
-            m.submodules.pastoria.net_857.eq(m.submodules.sunyshore.out[1]),
-            m.submodules.pastoria.net_985.eq(m.submodules.sunyshore.out[2]),
-            m.submodules.pastoria_big_and.conditions.eq(Cat(
-                m.submodules.pastoria.net_204,
-                m.submodules.pastoria.net_203,
-                m.submodules.pastoria.net_294,
-                m.submodules.pastoria.net_226,
-                m.submodules.pastoria.net_545,
-                m.submodules.pastoria.net_1185,
-                m.submodules.pastoria.net_341,
-                m.submodules.pastoria.net_401,
-                m.submodules.pastoria.net_399,
-                m.submodules.pastoria.net_405,
-                m.submodules.pastoria.net_349,
-            )),
+            m.submodules.region_checker.enable.eq(m.submodules.done_controller.enable_gated),
+            m.submodules.region_checker.I.eq(self.I),
+            m.submodules.region_checker.x.eq(m.submodules.sunyshore.out),
             m.submodules.success_controller.done.eq(m.submodules.done_controller.done),
             m.submodules.success_controller.snowpoint_property.eq(m.submodules.snowpoint.net_2259),
             m.submodules.success_controller.hearthome_property.eq(m.submodules.column_checker.result),
-            m.submodules.success_controller.pastoria_property.eq(m.submodules.pastoria_big_and.result),
+            m.submodules.success_controller.pastoria_property.eq(m.submodules.region_checker.result),
             m.submodules.success_controller.eterna_property.eq(m.submodules.eterna.result),
             m.submodules.success_controller.oreburgh_property.eq(m.submodules.oreburgh.net_719),
             m.submodules.output_mtcoronet.net_3771.eq(m.submodules.success_controller.done_delayed),
@@ -1082,7 +957,7 @@ class puzzle(wiring.Component):
             self.net_719.eq(m.submodules.oreburgh.net_719),
             self.net_1084.eq(m.submodules.oreburgh.net_1084),
             self.net_791.eq(m.submodules.oreburgh.net_791),
-            self.net_343.eq(m.submodules.pastoria_big_and.result),
+            self.net_343.eq(m.submodules.region_checker.result),
             self.net_2386.eq(m.submodules.column_checker.results[10]),
             self.net_2463.eq(m.submodules.column_checker.results[9]),
             self.net_2459.eq(m.submodules.column_checker.results[8]),
@@ -1094,17 +969,17 @@ class puzzle(wiring.Component):
             self.net_2393.eq(m.submodules.column_checker.results[4]),
             self.net_3830.eq(m.submodules.column_checker.results[5]),
             self.net_2416.eq(m.submodules.column_checker.results[0]),
-            self.net_204.eq(m.submodules.pastoria.net_204),
-            self.net_203.eq(m.submodules.pastoria.net_203),
-            self.net_294.eq(m.submodules.pastoria.net_294),
-            self.net_226.eq(m.submodules.pastoria.net_226),
-            self.net_545.eq(m.submodules.pastoria.net_545),
-            self.net_1185.eq(m.submodules.pastoria.net_1185),
-            self.net_341.eq(m.submodules.pastoria.net_341),
-            self.net_401.eq(m.submodules.pastoria.net_401),
-            self.net_399.eq(m.submodules.pastoria.net_399),
-            self.net_405.eq(m.submodules.pastoria.net_405),
-            self.net_349.eq(m.submodules.pastoria.net_349),
+            self.net_204.eq(m.submodules.region_checker.results[7]),
+            self.net_203.eq(m.submodules.region_checker.results[6]),
+            self.net_294.eq(m.submodules.region_checker.results[4]),
+            self.net_226.eq(m.submodules.region_checker.results[5]),
+            self.net_545.eq(m.submodules.region_checker.results[10]),
+            self.net_1185.eq(m.submodules.region_checker.results[9]),
+            self.net_341.eq(m.submodules.region_checker.results[8]),
+            self.net_401.eq(m.submodules.region_checker.results[3]),
+            self.net_399.eq(m.submodules.region_checker.results[2]),
+            self.net_405.eq(m.submodules.region_checker.results[0]),
+            self.net_349.eq(m.submodules.region_checker.results[1]),
             self.net_3771.eq(m.submodules.success_controller.done_delayed),
             self.net_3920.eq(m.submodules.success_controller.almost_success),
             self.net_1351.eq(m.submodules.output_mtcoronet.net_1351),

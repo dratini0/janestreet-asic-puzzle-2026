@@ -139,6 +139,8 @@
 3. Eterna
     * It seems to have some combinatorial bits, that only feed Snowpoint. But also, it has two copies of the same expression, one with a buffer, both going to Snowpoint. How weird.
     * The actual Eterna property is "every line has exactly two bits set" - are the Hearthome and Pastoria properties analogous for columns and picture regions? That seems like a SAT-solving nightmare.
+4. Hearthome and Pastoria are exactly that
+    * Separating Celestic and Solaceon didn't actually help, but it didn't hurt that much either.
 
 # Register of Easter Eggs
 * Jane Street logo on met2 (I suppose it's an easter egg, since it wasn't in the PNG, but not exactly a major achievement to find it)
