@@ -1,3 +1,4 @@
 cocotb=2.1.0
 amaranth=0.5.9
 matplotlib=3.11.1
+spd-pyeda=0.30.1

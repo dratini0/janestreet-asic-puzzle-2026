@@ -170,5 +170,6 @@
 * JSC image used for the Sunyshore module - though this may be actually shaping the solution via Pastoria, I don't know.
 * The odd history discoverd in the EdgeChecker
 * The near-miss output from the SuccessController
+    * Providing a near-solution to the puzzle (one where two neighbouring bits are set) gives the slightly garbled output "TWO NOT TOUCH"
 * Supplying an all-0 grid prints "EMPTY SKY"
 * Supplying an all-1 grid prings "BIG BANG"
