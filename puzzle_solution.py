@@ -260,77 +260,45 @@ class SuccessController(wiring.Component):
         return m
 
 class Output_MtCoronet(wiring.Component):
-    net_3771: In(1)
-    net_3920: In(1)
-    net_1084: In(1)
-    net_791: In(1)
-    net_3617: In(1)
-    net_3516: In(1)
-    net_3435: In(1)
-    net_3543: In(1)
-    net_3552: In(1)
-    net_3613: In(1)
+    done_delayed: In(1)
+    egg_almost_success: In(1)
+    egg_full: In(1)
+    egg_empty: In(1)
     success: In(1)
-    net_3518: In(1)
-    net_3818: In(1)
-    net_1351: Out(1)
-    net_1365: Out(1)
-    net_3037: Out(1)
-    net_3419: Out(1)
-    net_3420: Out(1)
-    net_3384: Out(1)
-    net_1505: Out(1)
-    net_1363: Out(1)
-    O_0_: Out(1)
-    O_1_: Out(1)
-    O_2_: Out(1)
-    O_3_: Out(1)
-    O_4_: Out(1)
-    O_5_: Out(1)
-    O_6_: Out(1)
-    O_7_: Out(1)
+    I: In(8)
+    output_enable: Out(1)
+    message_select_1: Out(1)
+    message_select_2: Out(1)
+    message_select_3: Out(1)
+    char_index: Out(4)
+    O: Out(8)
 
     def __init__(self):
-        self._net_3874 = Signal(1)
-        self._net_1365 = Signal(1, reset_less=True)
-        self._net_1351 = Signal(1, reset_less=True)
-        self._net_1363 = Signal(1, reset_less=True)
-        self._net_1505 = Signal(1, reset_less=True)
+        self._char_index = Signal(4, reset_less=True)
 
         super().__init__()
 
     def elaborate(self, platform):
         m = Module()
 
-        m.d.comb += [
-            self._net_3874.eq(~((self._net_1505) & (self._net_1365) & (self._net_1363) & (self._net_1351))),
-        ]
-
-        m.d.sync += [
-            self._net_1365.eq((((self._net_1505) | (~((self._net_1365) & (self._net_1363) & (self._net_1351)))) & ((((self._net_1363) & (self._net_1351)) | (self._net_1365))) & (self.net_3771))),
-            self._net_1351.eq(~(((self._net_1351) & (self._net_3874)) | (~(self.net_3771)))),
-            self._net_1363.eq(~(((self._net_3874) & (~((self._net_1363) ^ (self._net_1351)))) | (~(self.net_3771)))),
-            self._net_1505.eq(~(((~(self._net_1505)) & (~((self._net_1365) & (self._net_1363) & (self._net_1351)))) | (~(self.net_3771)))),
-        ]
+        with m.If(self.done_delayed):
+            with m.If(self._char_index != 15):
+                m.d.sync += self._char_index.eq(self._char_index + 1)
+        with m.Else():
+            m.d.sync += self._char_index.eq(0)
 
         m.d.comb += [
-            self.net_1351.eq(self._net_1351),
-            self.net_1365.eq(self._net_1365),
-            self.net_3037.eq((self.net_3771) & (self._net_3874)),
-            self.net_3419.eq(~((self.net_791) | ((((self.success) | (self.net_3920)) & ~(self.net_1084))))),
-            self.net_3420.eq(~((self.net_791) | (self.success) | (self.net_1084) | ~(self.net_3920))),
-            self.net_3384.eq(~(((~(self.success)) & (self.net_3920)) | (self.net_1084) | (self.net_791))),
-            self.net_1505.eq(self._net_1505),
-            self.net_1363.eq(self._net_1363),
-            self.O_0_.eq((self.net_3771) & (self.net_3617) & (self._net_3874)),
-            self.O_1_.eq((self.net_3771) & (self.net_3818) & (self._net_3874)),
-            self.O_2_.eq((self.net_3771) & (self.net_3516) & (self._net_3874)),
-            self.O_3_.eq((self.net_3771) & (self.net_3613) & (self._net_3874)),
-            self.O_4_.eq((self.net_3771) & (self.net_3552) & (self._net_3874)),
-            self.O_5_.eq((self.net_3771) & (self.net_3543) & (self._net_3874)),
-            self.O_6_.eq((self.net_3771) & (self.net_3518) & (self._net_3874)),
-            self.O_7_.eq((self.net_3771) & (self.net_3435) & (self._net_3874)),
+            self.char_index.eq(self._char_index),
+            self.output_enable.eq((self.done_delayed) & (self._char_index != 15)),
+            self.message_select_1.eq(~(self.egg_empty | ((self.success | self.egg_almost_success) & ~self.egg_full))),
+            self.message_select_2.eq(~((self.egg_empty) | (self.success) | (self.egg_full) | ~(self.egg_almost_success))),
+            self.message_select_3.eq(~(~self.success & self.egg_almost_success) & ~self.egg_full & ~self.egg_empty),
         ]
+
+        with m.If(self.output_enable):
+            m.d.comb += self.O.eq(self.I)
+        with m.Else():
+            m.d.comb += self.O.eq(0)
 
         return m
 
@@ -377,14 +345,7 @@ class Output_EternaForest(wiring.Component):
     net_1505: In(1)
     I: In(1)
     net_1363: In(1)
-    net_3617: Out(1)
-    net_3516: Out(1)
-    net_3435: Out(1)
-    net_3543: Out(1)
-    net_3552: Out(1)
-    net_3613: Out(1)
-    net_3518: Out(1)
-    net_3818: Out(1)
+    O: Out(8)
 
     def __init__(self):
         self._net_2949 = Signal(1, init=0)
@@ -413,14 +374,14 @@ class Output_EternaForest(wiring.Component):
         ]
 
         m.d.comb += [
-            self.net_3617.eq((((~((~((self.net_3419) | (self.net_3420) | ~(self.net_3384))) | (~(((self.net_3419) & (self.net_3420)) | (self.net_3384))))) | ((((self.net_2232) & (~((self.net_3384) | (self.net_3420) | ~(self.net_3419)))) | ((~((self.net_3384) | (self.net_3419) | (self.net_3420))) & (self.net_2006)))) | ((((~((self._net_2674) ^ (~(((~((self.net_1365) & (~(self.net_1351) & (self.net_1363)))) & (~((self.net_1363) & (self.net_1505)))) | (~((self.net_1351) | (~(self.net_1505)))))))) & (~((self.net_3419) | (self.net_3420) | ~(self.net_3384)))) | ((~((self.net_3384) | (self.net_3419) | ~(self.net_3420))) & (self.net_1559))))) & ((self.net_1816) | (~((self.net_3419) | (self.net_3420) | ~(self.net_3384))) | (~(((self.net_3419) & (self.net_3420)) | (self.net_3384)))))),
-            self.net_3516.eq((((~((~((self.net_3419) | (self.net_3420) | ~(self.net_3384))) | (~(((self.net_3419) & (self.net_3420)) | (self.net_3384))))) | ((((self.net_2313) & (~((self.net_3384) | (self.net_3420) | ~(self.net_3419)))) | ((~((self.net_3384) | (self.net_3419) | (self.net_3420))) & (self.net_1977)))) | ((((~((self._net_2689) ^ (~(((~(~((self.net_1365) & (~(self.net_1351) & (self.net_1363))))) | (~(((self.net_1363) | (self.net_1365)) & (~((self.net_1505) ^ ((self.net_1351) & (self.net_1363) & (self.net_1365))))))) & ((((self.net_1351) & (self.net_1365)) | (~(self.net_1505)) | (~(self.net_1351) & (self.net_1363)))))))) & (~((self.net_3419) | (self.net_3420) | ~(self.net_3384)))) | ((~((self.net_3384) | (self.net_3419) | ~(self.net_3420))) & (self.net_1694))))) & ((self.net_1907) | (~((self.net_3419) | (self.net_3420) | ~(self.net_3384))) | (~(((self.net_3419) & (self.net_3420)) | (self.net_3384)))))),
-            self.net_3435.eq((((~((~((self.net_3419) | (self.net_3420) | ~(self.net_3384))) | (~(((self.net_3419) & (self.net_3420)) | (self.net_3384))))) | ((((self.net_2479) & (~((self.net_3384) | (self.net_3420) | ~(self.net_3419)))) | ((~((self.net_3384) | (self.net_3419) | (self.net_3420))) & (self.net_2004)))) | ((((~((self._net_2743) ^ ((((self.net_1365) & (~(self.net_1505)) & (~((self.net_1351) & (self.net_1363)))) | (~(((self.net_1351) & (~(self.net_1505))) | (((self.net_1363) | (self.net_1365)) & (~((self.net_1351) & (self.net_1363)))))))))) & (~((self.net_3419) | (self.net_3420) | ~(self.net_3384)))) | ((~((self.net_3384) | (self.net_3419) | ~(self.net_3420))) & (self.net_1425))))) & ((self.net_1815) | (~((self.net_3419) | (self.net_3420) | ~(self.net_3384))) | (~(((self.net_3419) & (self.net_3420)) | (self.net_3384)))))),
-            self.net_3543.eq((((~((~((self.net_3419) | (self.net_3420) | ~(self.net_3384))) | (~(((self.net_3419) & (self.net_3420)) | (self.net_3384))))) | ((((self.net_2298) & (~((self.net_3384) | (self.net_3420) | ~(self.net_3419)))) | ((~((self.net_3384) | (self.net_3419) | (self.net_3420))) & (self.net_2120)))) | (((((self._net_2826) ^ (~((~(~(self.net_1363) & (self.net_1351))) & ((((~((self.net_1351) | (~(self.net_1505)))) & ((self.net_1363) | (self.net_1365))) | ((~((self.net_1505) ^ ((self.net_1351) & (self.net_1363) & (self.net_1365)))) & ((self.net_1351) | (self.net_1365) | ~(self.net_1363)))))))) & (~((self.net_3419) | (self.net_3420) | ~(self.net_3384)))) | ((~((self.net_3384) | (self.net_3419) | ~(self.net_3420))) & (self.net_1693))))) & ((self.net_1905) | (~((self.net_3419) | (self.net_3420) | ~(self.net_3384))) | (~(((self.net_3419) & (self.net_3420)) | (self.net_3384)))))),
-            self.net_3552.eq((((~((~((self.net_3419) | (self.net_3420) | ~(self.net_3384))) | (~(((self.net_3419) & (self.net_3420)) | (self.net_3384))))) | ((((self.net_2240) & (~((self.net_3384) | (self.net_3420) | ~(self.net_3419)))) | ((~((self.net_3384) | (self.net_3419) | (self.net_3420))) & (self.net_2189)))) | (((((self._net_2752) ^ ((((self.net_1365) | (~((self.net_1351) | (~(self.net_1505)))) | (~(self.net_1351) & (self.net_1363))) & (~((self.net_1363) & (self.net_1505)))))) & (~((self.net_3419) | (self.net_3420) | ~(self.net_3384)))) | ((~((self.net_3384) | (self.net_3419) | ~(self.net_3420))) & (self.net_1472))))) & ((self.net_1927) | (~((self.net_3419) | (self.net_3420) | ~(self.net_3384))) | (~(((self.net_3419) & (self.net_3420)) | (self.net_3384)))))),
-            self.net_3613.eq((((~((~((self.net_3419) | (self.net_3420) | ~(self.net_3384))) | (~(((self.net_3419) & (self.net_3420)) | (self.net_3384))))) | ((((self.net_2460) & (~((self.net_3384) | (self.net_3420) | ~(self.net_3419)))) | ((~((self.net_3384) | (self.net_3419) | (self.net_3420))) & (self.net_2117)))) | (((((self._net_2609) ^ ((((~(~((self.net_1365) & (~(self.net_1351) & (self.net_1363))))) | (~((self.net_1505) ^ ((self.net_1351) & (self.net_1363) & (self.net_1365)))) | (~((self.net_1365) | (~(~((self.net_1351) | (self.net_1363))) & (~((self.net_1351) & (self.net_1363))))))) & ((~(~((self.net_1351) | (self.net_1363))) & (~((self.net_1351) & (self.net_1363)))) | (~(((self.net_1363) | (self.net_1365)) & (~((self.net_1505) ^ ((self.net_1351) & (self.net_1363) & (self.net_1365)))))))))) & (~((self.net_3419) | (self.net_3420) | ~(self.net_3384)))) | ((~((self.net_3384) | (self.net_3419) | ~(self.net_3420))) & (self.net_1516))))) & ((self.net_1936) | (~((self.net_3419) | (self.net_3420) | ~(self.net_3384))) | (~(((self.net_3419) & (self.net_3420)) | (self.net_3384)))))),
-            self.net_3518.eq((((~((~((self.net_3419) | (self.net_3420) | ~(self.net_3384))) | (~(((self.net_3419) & (self.net_3420)) | (self.net_3384))))) | ((((self.net_2461) & (~((self.net_3384) | (self.net_3420) | ~(self.net_3419)))) | ((~((self.net_3384) | (self.net_3419) | (self.net_3420))) & (self.net_2154)))) | ((((~((self._net_2676) ^ ((((self.net_1351) & (~((self.net_1365) | (self.net_1505)))) | ((~(~(self.net_1363) & (self.net_1351))) & (self.net_1365)))))) & (~((self.net_3419) | (self.net_3420) | ~(self.net_3384)))) | ((~((self.net_3384) | (self.net_3419) | ~(self.net_3420))) & (self.net_1629))))) & ((self.net_1928) | (~((self.net_3419) | (self.net_3420) | ~(self.net_3384))) | (~(((self.net_3419) & (self.net_3420)) | (self.net_3384)))))),
-            self.net_3818.eq((((~((~((self.net_3419) | (self.net_3420) | ~(self.net_3384))) | (~(((self.net_3419) & (self.net_3420)) | (self.net_3384))))) | ((((self.net_2315) & (~((self.net_3384) | (self.net_3420) | ~(self.net_3419)))) | ((~((self.net_3384) | (self.net_3419) | (self.net_3420))) & (self.net_2088)))) | ((((~(((~((self.net_1351) | (~(self.net_1505)))) | (~((self.net_1351) | (self.net_1363))) | (~((self.net_1365) | (self.net_1505)))) ^ ((self._net_2949) ^ ((self.net_1363) | (self.net_1365))))) & (~((self.net_3419) | (self.net_3420) | ~(self.net_3384)))) | ((~((self.net_3384) | (self.net_3419) | ~(self.net_3420))) & (self.net_1420))))) & ((self.net_1822) | (~((self.net_3419) | (self.net_3420) | ~(self.net_3384))) | (~(((self.net_3419) & (self.net_3420)) | (self.net_3384)))))),
+            self.O[0].eq((((~((~((self.net_3419) | (self.net_3420) | ~(self.net_3384))) | (~(((self.net_3419) & (self.net_3420)) | (self.net_3384))))) | ((((self.net_2232) & (~((self.net_3384) | (self.net_3420) | ~(self.net_3419)))) | ((~((self.net_3384) | (self.net_3419) | (self.net_3420))) & (self.net_2006)))) | ((((~((self._net_2674) ^ (~(((~((self.net_1365) & (~(self.net_1351) & (self.net_1363)))) & (~((self.net_1363) & (self.net_1505)))) | (~((self.net_1351) | (~(self.net_1505)))))))) & (~((self.net_3419) | (self.net_3420) | ~(self.net_3384)))) | ((~((self.net_3384) | (self.net_3419) | ~(self.net_3420))) & (self.net_1559))))) & ((self.net_1816) | (~((self.net_3419) | (self.net_3420) | ~(self.net_3384))) | (~(((self.net_3419) & (self.net_3420)) | (self.net_3384)))))),
+            self.O[1].eq((((~((~((self.net_3419) | (self.net_3420) | ~(self.net_3384))) | (~(((self.net_3419) & (self.net_3420)) | (self.net_3384))))) | ((((self.net_2315) & (~((self.net_3384) | (self.net_3420) | ~(self.net_3419)))) | ((~((self.net_3384) | (self.net_3419) | (self.net_3420))) & (self.net_2088)))) | ((((~(((~((self.net_1351) | (~(self.net_1505)))) | (~((self.net_1351) | (self.net_1363))) | (~((self.net_1365) | (self.net_1505)))) ^ ((self._net_2949) ^ ((self.net_1363) | (self.net_1365))))) & (~((self.net_3419) | (self.net_3420) | ~(self.net_3384)))) | ((~((self.net_3384) | (self.net_3419) | ~(self.net_3420))) & (self.net_1420))))) & ((self.net_1822) | (~((self.net_3419) | (self.net_3420) | ~(self.net_3384))) | (~(((self.net_3419) & (self.net_3420)) | (self.net_3384)))))),
+            self.O[2].eq((((~((~((self.net_3419) | (self.net_3420) | ~(self.net_3384))) | (~(((self.net_3419) & (self.net_3420)) | (self.net_3384))))) | ((((self.net_2313) & (~((self.net_3384) | (self.net_3420) | ~(self.net_3419)))) | ((~((self.net_3384) | (self.net_3419) | (self.net_3420))) & (self.net_1977)))) | ((((~((self._net_2689) ^ (~(((~(~((self.net_1365) & (~(self.net_1351) & (self.net_1363))))) | (~(((self.net_1363) | (self.net_1365)) & (~((self.net_1505) ^ ((self.net_1351) & (self.net_1363) & (self.net_1365))))))) & ((((self.net_1351) & (self.net_1365)) | (~(self.net_1505)) | (~(self.net_1351) & (self.net_1363)))))))) & (~((self.net_3419) | (self.net_3420) | ~(self.net_3384)))) | ((~((self.net_3384) | (self.net_3419) | ~(self.net_3420))) & (self.net_1694))))) & ((self.net_1907) | (~((self.net_3419) | (self.net_3420) | ~(self.net_3384))) | (~(((self.net_3419) & (self.net_3420)) | (self.net_3384)))))),
+            self.O[3].eq((((~((~((self.net_3419) | (self.net_3420) | ~(self.net_3384))) | (~(((self.net_3419) & (self.net_3420)) | (self.net_3384))))) | ((((self.net_2460) & (~((self.net_3384) | (self.net_3420) | ~(self.net_3419)))) | ((~((self.net_3384) | (self.net_3419) | (self.net_3420))) & (self.net_2117)))) | (((((self._net_2609) ^ ((((~(~((self.net_1365) & (~(self.net_1351) & (self.net_1363))))) | (~((self.net_1505) ^ ((self.net_1351) & (self.net_1363) & (self.net_1365)))) | (~((self.net_1365) | (~(~((self.net_1351) | (self.net_1363))) & (~((self.net_1351) & (self.net_1363))))))) & ((~(~((self.net_1351) | (self.net_1363))) & (~((self.net_1351) & (self.net_1363)))) | (~(((self.net_1363) | (self.net_1365)) & (~((self.net_1505) ^ ((self.net_1351) & (self.net_1363) & (self.net_1365)))))))))) & (~((self.net_3419) | (self.net_3420) | ~(self.net_3384)))) | ((~((self.net_3384) | (self.net_3419) | ~(self.net_3420))) & (self.net_1516))))) & ((self.net_1936) | (~((self.net_3419) | (self.net_3420) | ~(self.net_3384))) | (~(((self.net_3419) & (self.net_3420)) | (self.net_3384)))))),
+            self.O[4].eq((((~((~((self.net_3419) | (self.net_3420) | ~(self.net_3384))) | (~(((self.net_3419) & (self.net_3420)) | (self.net_3384))))) | ((((self.net_2240) & (~((self.net_3384) | (self.net_3420) | ~(self.net_3419)))) | ((~((self.net_3384) | (self.net_3419) | (self.net_3420))) & (self.net_2189)))) | (((((self._net_2752) ^ ((((self.net_1365) | (~((self.net_1351) | (~(self.net_1505)))) | (~(self.net_1351) & (self.net_1363))) & (~((self.net_1363) & (self.net_1505)))))) & (~((self.net_3419) | (self.net_3420) | ~(self.net_3384)))) | ((~((self.net_3384) | (self.net_3419) | ~(self.net_3420))) & (self.net_1472))))) & ((self.net_1927) | (~((self.net_3419) | (self.net_3420) | ~(self.net_3384))) | (~(((self.net_3419) & (self.net_3420)) | (self.net_3384)))))),
+            self.O[5].eq((((~((~((self.net_3419) | (self.net_3420) | ~(self.net_3384))) | (~(((self.net_3419) & (self.net_3420)) | (self.net_3384))))) | ((((self.net_2298) & (~((self.net_3384) | (self.net_3420) | ~(self.net_3419)))) | ((~((self.net_3384) | (self.net_3419) | (self.net_3420))) & (self.net_2120)))) | (((((self._net_2826) ^ (~((~(~(self.net_1363) & (self.net_1351))) & ((((~((self.net_1351) | (~(self.net_1505)))) & ((self.net_1363) | (self.net_1365))) | ((~((self.net_1505) ^ ((self.net_1351) & (self.net_1363) & (self.net_1365)))) & ((self.net_1351) | (self.net_1365) | ~(self.net_1363)))))))) & (~((self.net_3419) | (self.net_3420) | ~(self.net_3384)))) | ((~((self.net_3384) | (self.net_3419) | ~(self.net_3420))) & (self.net_1693))))) & ((self.net_1905) | (~((self.net_3419) | (self.net_3420) | ~(self.net_3384))) | (~(((self.net_3419) & (self.net_3420)) | (self.net_3384)))))),
+            self.O[6].eq((((~((~((self.net_3419) | (self.net_3420) | ~(self.net_3384))) | (~(((self.net_3419) & (self.net_3420)) | (self.net_3384))))) | ((((self.net_2461) & (~((self.net_3384) | (self.net_3420) | ~(self.net_3419)))) | ((~((self.net_3384) | (self.net_3419) | (self.net_3420))) & (self.net_2154)))) | ((((~((self._net_2676) ^ ((((self.net_1351) & (~((self.net_1365) | (self.net_1505)))) | ((~(~(self.net_1363) & (self.net_1351))) & (self.net_1365)))))) & (~((self.net_3419) | (self.net_3420) | ~(self.net_3384)))) | ((~((self.net_3384) | (self.net_3419) | ~(self.net_3420))) & (self.net_1629))))) & ((self.net_1928) | (~((self.net_3419) | (self.net_3420) | ~(self.net_3384))) | (~(((self.net_3419) & (self.net_3420)) | (self.net_3384)))))),
+            self.O[7].eq((((~((~((self.net_3419) | (self.net_3420) | ~(self.net_3384))) | (~(((self.net_3419) & (self.net_3420)) | (self.net_3384))))) | ((((self.net_2479) & (~((self.net_3384) | (self.net_3420) | ~(self.net_3419)))) | ((~((self.net_3384) | (self.net_3419) | (self.net_3420))) & (self.net_2004)))) | ((((~((self._net_2743) ^ ((((self.net_1365) & (~(self.net_1505)) & (~((self.net_1351) & (self.net_1363)))) | (~(((self.net_1351) & (~(self.net_1505))) | (((self.net_1363) | (self.net_1365)) & (~((self.net_1351) & (self.net_1363)))))))))) & (~((self.net_3419) | (self.net_3420) | ~(self.net_3384)))) | ((~((self.net_3384) | (self.net_3419) | ~(self.net_3420))) & (self.net_1425))))) & ((self.net_1815) | (~((self.net_3419) | (self.net_3420) | ~(self.net_3384))) | (~(((self.net_3419) & (self.net_3420)) | (self.net_3384)))))),
         ]
 
         return m
@@ -633,14 +594,7 @@ class puzzle(wiring.Component):
     I: In(1)
     enable: In(1)
     net_1447: In(1)
-    O_0_: Out(1)
-    O_1_: Out(1)
-    O_2_: Out(1)
-    O_3_: Out(1)
-    O_4_: Out(1)
-    O_5_: Out(1)
-    O_6_: Out(1)
-    O_7_: Out(1)
+    O: Out(8)
     success: Out(1)
 
     # Testing outputs
@@ -796,21 +750,14 @@ class puzzle(wiring.Component):
             m.submodules.success_controller.region_property.eq(m.submodules.region_checker.result),
             m.submodules.success_controller.row_property.eq(m.submodules.row_checker.result),
             m.submodules.success_controller.popcnt_property.eq(m.submodules.popcnt_checker.result),
-            m.submodules.output_mtcoronet.net_3771.eq(m.submodules.success_controller.done_delayed),
-            m.submodules.output_mtcoronet.net_3920.eq(m.submodules.success_controller.almost_success),
-            m.submodules.output_mtcoronet.net_1084.eq(m.submodules.popcnt_checker.full),
-            m.submodules.output_mtcoronet.net_791.eq(m.submodules.popcnt_checker.empty),
-            m.submodules.output_mtcoronet.net_3617.eq(m.submodules.output_eternaforest.net_3617),
-            m.submodules.output_mtcoronet.net_3516.eq(m.submodules.output_eternaforest.net_3516),
-            m.submodules.output_mtcoronet.net_3435.eq(m.submodules.output_eternaforest.net_3435),
-            m.submodules.output_mtcoronet.net_3543.eq(m.submodules.output_eternaforest.net_3543),
-            m.submodules.output_mtcoronet.net_3552.eq(m.submodules.output_eternaforest.net_3552),
-            m.submodules.output_mtcoronet.net_3613.eq(m.submodules.output_eternaforest.net_3613),
+            m.submodules.output_mtcoronet.done_delayed.eq(m.submodules.success_controller.done_delayed),
+            m.submodules.output_mtcoronet.egg_almost_success.eq(m.submodules.success_controller.almost_success),
+            m.submodules.output_mtcoronet.egg_full.eq(m.submodules.popcnt_checker.full),
+            m.submodules.output_mtcoronet.egg_empty.eq(m.submodules.popcnt_checker.empty),
             m.submodules.output_mtcoronet.success.eq(m.submodules.success_controller.success),
-            m.submodules.output_mtcoronet.net_3518.eq(m.submodules.output_eternaforest.net_3518),
-            m.submodules.output_mtcoronet.net_3818.eq(m.submodules.output_eternaforest.net_3818),
-            m.submodules.output_eternaforest.net_1351.eq(m.submodules.output_mtcoronet.net_1351),
-            m.submodules.output_eternaforest.net_1365.eq(m.submodules.output_mtcoronet.net_1365),
+            m.submodules.output_mtcoronet.I.eq(m.submodules.output_eternaforest.O),
+            m.submodules.output_eternaforest.net_1351.eq(m.submodules.output_mtcoronet.char_index[0]),
+            m.submodules.output_eternaforest.net_1365.eq(m.submodules.output_mtcoronet.char_index[2]),
             m.submodules.output_eternaforest.net_2232.eq(m.submodules.output_lakeacuity.net_2232),
             m.submodules.output_eternaforest.net_2006.eq(m.submodules.output_lakeacuity.net_2006),
             m.submodules.output_eternaforest.net_1425.eq(m.submodules.output_lakevalor.net_1425),
@@ -829,11 +776,11 @@ class puzzle(wiring.Component):
             m.submodules.output_eternaforest.net_2240.eq(m.submodules.output_lakeacuity.net_2240),
             m.submodules.output_eternaforest.net_2189.eq(m.submodules.output_lakeacuity.net_2189),
             m.submodules.output_eternaforest.net_1420.eq(m.submodules.output_lakevalor.net_1420),
-            m.submodules.output_eternaforest.net_3037.eq(m.submodules.output_mtcoronet.net_3037),
+            m.submodules.output_eternaforest.net_3037.eq(m.submodules.output_mtcoronet.output_enable),
             m.submodules.output_eternaforest.net_934.eq(m.submodules.done_controller.enable_gated),
-            m.submodules.output_eternaforest.net_3419.eq(m.submodules.output_mtcoronet.net_3419),
-            m.submodules.output_eternaforest.net_3420.eq(m.submodules.output_mtcoronet.net_3420),
-            m.submodules.output_eternaforest.net_3384.eq(m.submodules.output_mtcoronet.net_3384),
+            m.submodules.output_eternaforest.net_3419.eq(m.submodules.output_mtcoronet.message_select_1),
+            m.submodules.output_eternaforest.net_3420.eq(m.submodules.output_mtcoronet.message_select_2),
+            m.submodules.output_eternaforest.net_3384.eq(m.submodules.output_mtcoronet.message_select_3),
             m.submodules.output_eternaforest.net_1559.eq(m.submodules.output_lakevalor.net_1559),
             m.submodules.output_eternaforest.net_1816.eq(m.submodules.output_lakeverity.net_1816),
             m.submodules.output_eternaforest.net_1936.eq(m.submodules.output_lakeverity.net_1936),
@@ -848,35 +795,28 @@ class puzzle(wiring.Component):
             m.submodules.output_eternaforest.net_2004.eq(m.submodules.output_lakeacuity.net_2004),
             m.submodules.output_eternaforest.net_1907.eq(m.submodules.output_lakeverity.net_1907),
             m.submodules.output_eternaforest.net_1822.eq(m.submodules.output_lakeverity.net_1822),
-            m.submodules.output_eternaforest.net_1505.eq(m.submodules.output_mtcoronet.net_1505),
+            m.submodules.output_eternaforest.net_1505.eq(m.submodules.output_mtcoronet.char_index[3]),
             m.submodules.output_eternaforest.I.eq(self.I),
-            m.submodules.output_eternaforest.net_1363.eq(m.submodules.output_mtcoronet.net_1363),
-            m.submodules.output_lakeacuity.net_1351.eq(m.submodules.output_mtcoronet.net_1351),
-            m.submodules.output_lakeacuity.net_1505.eq(m.submodules.output_mtcoronet.net_1505),
-            m.submodules.output_lakeacuity.net_1365.eq(m.submodules.output_mtcoronet.net_1365),
-            m.submodules.output_lakeacuity.net_1363.eq(m.submodules.output_mtcoronet.net_1363),
-            m.submodules.output_lakeverity.net_1363.eq(m.submodules.output_mtcoronet.net_1363),
-            m.submodules.output_lakeverity.net_1365.eq(m.submodules.output_mtcoronet.net_1365),
-            m.submodules.output_lakeverity.net_1351.eq(m.submodules.output_mtcoronet.net_1351),
-            m.submodules.output_lakeverity.net_1505.eq(m.submodules.output_mtcoronet.net_1505),
-            m.submodules.output_lakevalor.net_1365.eq(m.submodules.output_mtcoronet.net_1365),
-            m.submodules.output_lakevalor.net_1351.eq(m.submodules.output_mtcoronet.net_1351),
-            m.submodules.output_lakevalor.net_1505.eq(m.submodules.output_mtcoronet.net_1505),
-            m.submodules.output_lakevalor.net_1363.eq(m.submodules.output_mtcoronet.net_1363),
+            m.submodules.output_eternaforest.net_1363.eq(m.submodules.output_mtcoronet.char_index[1]),
+            m.submodules.output_lakeacuity.net_1351.eq(m.submodules.output_mtcoronet.char_index[0]),
+            m.submodules.output_lakeacuity.net_1505.eq(m.submodules.output_mtcoronet.char_index[3]),
+            m.submodules.output_lakeacuity.net_1365.eq(m.submodules.output_mtcoronet.char_index[2]),
+            m.submodules.output_lakeacuity.net_1363.eq(m.submodules.output_mtcoronet.char_index[1]),
+            m.submodules.output_lakeverity.net_1363.eq(m.submodules.output_mtcoronet.char_index[1]),
+            m.submodules.output_lakeverity.net_1365.eq(m.submodules.output_mtcoronet.char_index[2]),
+            m.submodules.output_lakeverity.net_1351.eq(m.submodules.output_mtcoronet.char_index[0]),
+            m.submodules.output_lakeverity.net_1505.eq(m.submodules.output_mtcoronet.char_index[3]),
+            m.submodules.output_lakevalor.net_1365.eq(m.submodules.output_mtcoronet.char_index[2]),
+            m.submodules.output_lakevalor.net_1351.eq(m.submodules.output_mtcoronet.char_index[0]),
+            m.submodules.output_lakevalor.net_1505.eq(m.submodules.output_mtcoronet.char_index[3]),
+            m.submodules.output_lakevalor.net_1363.eq(m.submodules.output_mtcoronet.char_index[1]),
             m.submodules.output_lakevalor.net_1447.eq(self.net_1447),
             m.submodules.regions.x.eq(m.submodules.x_counter.count),
             m.submodules.regions.y.eq(m.submodules.y_counter.count),
         ]
 
         m.d.comb += [
-            self.O_0_.eq(m.submodules.output_mtcoronet.O_0_),
-            self.O_1_.eq(m.submodules.output_mtcoronet.O_1_),
-            self.O_2_.eq(m.submodules.output_mtcoronet.O_2_),
-            self.O_3_.eq(m.submodules.output_mtcoronet.O_3_),
-            self.O_4_.eq(m.submodules.output_mtcoronet.O_4_),
-            self.O_5_.eq(m.submodules.output_mtcoronet.O_5_),
-            self.O_6_.eq(m.submodules.output_mtcoronet.O_6_),
-            self.O_7_.eq(m.submodules.output_mtcoronet.O_7_),
+            self.O.eq(m.submodules.output_mtcoronet.O),
             self.success.eq(m.submodules.success_controller.success),
         ]
 
@@ -929,22 +869,22 @@ class puzzle(wiring.Component):
             self.net_349.eq(m.submodules.region_checker.results[1]),
             self.net_3771.eq(m.submodules.success_controller.done_delayed),
             self.net_3920.eq(m.submodules.success_controller.almost_success),
-            self.net_1351.eq(m.submodules.output_mtcoronet.net_1351),
-            self.net_1365.eq(m.submodules.output_mtcoronet.net_1365),
-            self.net_3037.eq(m.submodules.output_mtcoronet.net_3037),
-            self.net_3419.eq(m.submodules.output_mtcoronet.net_3419),
-            self.net_3420.eq(m.submodules.output_mtcoronet.net_3420),
-            self.net_3384.eq(m.submodules.output_mtcoronet.net_3384),
-            self.net_1505.eq(m.submodules.output_mtcoronet.net_1505),
-            self.net_1363.eq(m.submodules.output_mtcoronet.net_1363),
-            self.net_3617.eq(m.submodules.output_eternaforest.net_3617),
-            self.net_3516.eq(m.submodules.output_eternaforest.net_3516),
-            self.net_3435.eq(m.submodules.output_eternaforest.net_3435),
-            self.net_3543.eq(m.submodules.output_eternaforest.net_3543),
-            self.net_3552.eq(m.submodules.output_eternaforest.net_3552),
-            self.net_3613.eq(m.submodules.output_eternaforest.net_3613),
-            self.net_3518.eq(m.submodules.output_eternaforest.net_3518),
-            self.net_3818.eq(m.submodules.output_eternaforest.net_3818),
+            self.net_1351.eq(m.submodules.output_mtcoronet.char_index[0]),
+            self.net_1365.eq(m.submodules.output_mtcoronet.char_index[2]),
+            self.net_3037.eq(m.submodules.output_mtcoronet.output_enable),
+            self.net_3419.eq(m.submodules.output_mtcoronet.message_select_1),
+            self.net_3420.eq(m.submodules.output_mtcoronet.message_select_2),
+            self.net_3384.eq(m.submodules.output_mtcoronet.message_select_3),
+            self.net_1505.eq(m.submodules.output_mtcoronet.char_index[3]),
+            self.net_1363.eq(m.submodules.output_mtcoronet.char_index[1]),
+            self.net_3617.eq(m.submodules.output_eternaforest.O[0]),
+            self.net_3516.eq(m.submodules.output_eternaforest.O[2]),
+            self.net_3435.eq(m.submodules.output_eternaforest.O[7]),
+            self.net_3543.eq(m.submodules.output_eternaforest.O[5]),
+            self.net_3552.eq(m.submodules.output_eternaforest.O[4]),
+            self.net_3613.eq(m.submodules.output_eternaforest.O[3]),
+            self.net_3518.eq(m.submodules.output_eternaforest.O[6]),
+            self.net_3818.eq(m.submodules.output_eternaforest.O[1]),
             self.net_2232.eq(m.submodules.output_lakeacuity.net_2232),
             self.net_2006.eq(m.submodules.output_lakeacuity.net_2006),
             self.net_2313.eq(m.submodules.output_lakeacuity.net_2313),
@@ -1049,14 +989,7 @@ if __name__ == "__main__":
             top.net_3384,
             top.net_1505,
             top.net_1363,
-            top.O_0_,
-            top.O_1_,
-            top.O_2_,
-            top.O_3_,
-            top.O_4_,
-            top.O_5_,
-            top.O_6_,
-            top.O_7_,
+            top.O,
             top.net_3617,
             top.net_3516,
             top.net_3435,
