@@ -164,6 +164,11 @@
         * Every column has 2 bits set
         * Every region has 2 bits set
         * There are 2 adjacent bits that are set
+4. Got a solve and the partial-solve easter egg, but the partial solve easter egg is broken
+    * 17 seconds of CPU time
+5. Look at this diagram!
+
+![](block_diagram.svg)
 
 # Register of Easter Eggs
 * Jane Street logo on met2 (I suppose it's an easter egg, since it wasn't in the PNG, but not exactly a major achievement to find it)
@@ -173,3 +178,4 @@
     * Providing a near-solution to the puzzle (one where two neighbouring bits are set) gives the slightly garbled output "TWO NOT TOUCH"
 * Supplying an all-0 grid prints "EMPTY SKY"
 * Supplying an all-1 grid prings "BIG BANG"
+* The example inputs, when turned into ASCII line-by-line (LSB first), read "The night s" and "ky awaits  "
