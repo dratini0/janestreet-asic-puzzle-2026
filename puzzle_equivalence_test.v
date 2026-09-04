@@ -49,14 +49,7 @@ module puzzle_equivalence_test (
         .rst(!rst_n),
         .I(I),
         .success(success_solution),
-        .O_0_(O_solution[0]),
-        .O_1_(O_solution[1]),
-        .O_2_(O_solution[2]),
-        .O_3_(O_solution[3]),
-        .O_4_(O_solution[4]),
-        .O_5_(O_solution[5]),
-        .O_6_(O_solution[6]),
-        .O_7_(O_solution[7]),
+        .O(O_solution),
         .enable(enable)
     );
 endmodule

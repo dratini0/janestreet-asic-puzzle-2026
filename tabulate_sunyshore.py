@@ -169,4 +169,9 @@ for permutation, ax in zip(permutations(range(4)), axs.flat, strict=True):
 
 plt.show()
 
-print(repr(sum(plane << shift for shift, plane in enumerate(data))))
+solution = sum(plane << shift for shift, plane in enumerate(data))
+
+plt.imshow(solution, cmap="Paired")
+plt.show()
+
+print(repr(solution))
