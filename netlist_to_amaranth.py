@@ -89,7 +89,7 @@ LUMPS = {
         # Column 4
         Lump("Veilstone", 140., 200., 265., 300.),
         Lump("Output_MtCoronet", 140., 200., 235., 265.),
-        Lump("Output_EternaForest", 140., 200., 160., 235.),
+        Lump("Output_EternaForest", 140., 200., 160., 235., OutputPolicy(fanout_limit=0)),
         Lump("Output_LakeAcuity", 140., 200., 125., 160.),
         Lump("Output_LakeVerity", 140., 200., 105., 125.),
         Lump("Output_LakeValor", 140., 200., 70., 105.),
