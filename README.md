@@ -1,28 +1,16 @@
-# ASIC Reverse-Engineering Puzzle
+# ASIC Reverse-Engineering Puzzle solution
 
-This repository provides the files for the Jane Street ASIC reverse-engineering puzzle! See the [blog post](https://blog.janestreet.com/can-you-reverse-engineer-an-asic/) for more details.
+This repo represents my solution to [Jane Street's ASIC reverse engineering puzzle](https://blog.janestreet.com/can-you-reverse-engineer-an-asic/).
+It is a fork of the [original repository](https://github.com/janestreet/asic-puzzle-2026), I just had to remove its fork-ness to keep it private until the submission deadline.
+This is a limitation of GitHub.
 
-### Puzzle GDS
+## Copyright
+* Puzzle files (`warmup/*`, `puzzle.gds`, `example_inputs.vcd`, `layout.png`) are copyright Jane Street
+* The files inside `sky130_sc_hd_verilog` are copyright The SkyWater PDK Authors, license include in the file (for every single standard cell, no less)
+* `cells.json` is copyright Tiny Tapeout, [source](https://github.com/TinyTapeout/tt-support-tools/blob/main/tech/sky130A/cells.json) (be careful, it has bugs in the formulas!)
+* All other files in this repository are my own work, Apache 2.0, I guess, if you want to use it for some reason?
 
-The puzzle GDS is in this repository, in the file named `puzzle.gds`. You can preview it using [KLayout](https://www.klayout.de/) or the [TinyTapeout Online GDS Viewer](https://gds-viewer.tinytapeout.com/).
+## AI disclaimer
 
-See `example_inputs.vcd` which shows some inputs being fed to the design (unfortunately, not the correct inputs to make `success` go high!). You can view it using [Surfer](https://surfer-project.org/) or a similar tool.
-
-To help you get started, below is an image with some hints. The region labelled as "output generator" is safe to ignore during your initial reverse-engineering steps, but you'll need to simulate it to get your final answer!
-
-![](layout.png)
-
-### Warm-up Puzzle
-
-To familiarize yourself with the flow and help develop your tools, we've put together a small example design and run it through a very similar flow to the one used for the real thing! The example design consists of two shift registers, an adder, and a comparator, outputting success if `A + B == 496`.
-
-You'll find the following files related to the warm-up puzzle:
-
-- `warmup/00_source.v`: The original Verilog source code of the example design
-- `warmup/01_netlist.v`: Synthesized netlist comprising of a list of standard cells
-  and connections
-- `warmup/02_netlist_with_power_rails.v`: Netlist with VDD and GND rails added
-- `warmup/03_post_place_and_route.def`: Physical layout of cells and routing
-  connections, corresponding to cell and net names.
-- `warmup/04_final.gds`: The final manufacturable layout file, with many internal names
-  removed
+I have not used any AI tools to author this code, which I regret in retrospect.
+The [fork of PyEDA](https://github.com/Speedata-io/pyeda) I have been using seems to be mostly maintained with Claude, however.
