@@ -1,4 +1,5 @@
 from enum import Enum
+from functools import reduce
 from itertools import chain
 from sys import argv
 
@@ -371,33 +372,44 @@ class OutputFlagObfuscator(wiring.Component):
 
         super().__init__()
 
+    def step(self, state, input):
+        return Cat(input ^ state[3] ^ state[4] ^ state[5] ^ state[7], state[:7])
+
     def elaborate(self, platform):
         m = Module()
 
+        m.submodules.obfuscated_flag_rom = Memory(
+            width=8,
+            depth=16,
+            init=[
+                0x4D,
+                0xAD,
+                0xFB,
+                0x83,
+                0x13,
+                0x79,
+                0x1C,
+                0xB5,
+                0x79,
+                0x63,
+                0xC7,
+                0x68,
+                0x93,
+                0xF5,
+                0x8F,
+                0x0,
+            ],
+        )
+        flag_rom_rd_port = m.submodules.obfuscated_flag_rom.read_port(domain="comb")
+
+        m.d.comb += flag_rom_rd_port.addr.eq(self.char_index)
+
         with m.If(self.enable):
-            m.d.sync += self._state.eq(
-                Cat(
-                    self.I
-                    ^ self._state[3]
-                    ^ self._state[4]
-                    ^ self._state[5]
-                    ^ self._state[7],
-                    self._state[:7],
-                )
-            )
+            m.d.sync += self._state.eq(self.step(self._state, self.I))
 
         # fmt: off
         with m.Elif(self.output_enable):
-            m.d.sync += [
-                self._state[0].eq(self._state[5] ^ self._state[2] ^ self._state[6]),
-                self._state[1].eq(self._state[7] ^ self._state[6] ^ self._state[3]),
-                self._state[2].eq(self._state[7] ^ self._state[0] ^ self._state[5] ^ self._state[6]),
-                self._state[3].eq(self._state[1] ^ self._state[4] ^ self._state[0] ^ self._state[7] ^ self._state[5]),
-                self._state[4].eq(self._state[1] ^ self._state[4] ^ self._state[0] ^ self._state[2]),
-                self._state[5].eq(self._state[1] ^ self._state[5] ^ self._state[2] ^ self._state[3]),
-                self._state[6].eq(self._state[4] ^ self._state[2] ^ self._state[6] ^ self._state[3]),
-                self._state[7].eq(self._state[4] ^ self._state[7] ^ self._state[5] ^ self._state[3]),
-            ]
+            m.d.sync += self._state.eq(reduce(self.step, [0] * 8, initial=self._state))
         # fmt: on
 
         with m.Switch(self.message_select):
@@ -408,198 +420,7 @@ class OutputFlagObfuscator(wiring.Component):
                 m.d.comb += self.O.eq(self.I_big_bang)
 
             with m.Case(MessageSelect.FLAG):
-                with m.Switch(self.char_index):
-                    with m.Case(0):
-                        m.d.comb += [
-                            self.O[0].eq(~self._state[0]),
-                            self.O[1].eq(self._state[1]),
-                            self.O[2].eq(~self._state[2]),
-                            self.O[3].eq(~self._state[3]),
-                            self.O[4].eq(self._state[4]),
-                            self.O[5].eq(self._state[5]),
-                            self.O[6].eq(~self._state[6]),
-                            self.O[7].eq(self._state[7]),
-                        ]
-
-                    with m.Case(1):
-                        m.d.comb += [
-                            self.O[0].eq(~self._state[0]),
-                            self.O[1].eq(self._state[1]),
-                            self.O[2].eq(~self._state[2]),
-                            self.O[3].eq(~self._state[3]),
-                            self.O[4].eq(self._state[4]),
-                            self.O[5].eq(~self._state[5]),
-                            self.O[6].eq(self._state[6]),
-                            self.O[7].eq(~self._state[7]),
-                        ]
-
-                    with m.Case(2):
-                        m.d.comb += [
-                            self.O[0].eq(~self._state[0]),
-                            self.O[1].eq(~self._state[1]),
-                            self.O[2].eq(self._state[2]),
-                            self.O[3].eq(~self._state[3]),
-                            self.O[4].eq(~self._state[4]),
-                            self.O[5].eq(~self._state[5]),
-                            self.O[6].eq(~self._state[6]),
-                            self.O[7].eq(~self._state[7]),
-                        ]
-
-                    with m.Case(3):
-                        m.d.comb += [
-                            self.O[0].eq(~self._state[0]),
-                            self.O[1].eq(~self._state[1]),
-                            self.O[2].eq(self._state[2]),
-                            self.O[3].eq(self._state[3]),
-                            self.O[4].eq(self._state[4]),
-                            self.O[5].eq(self._state[5]),
-                            self.O[6].eq(self._state[6]),
-                            self.O[7].eq(~self._state[7]),
-                        ]
-
-                    with m.Case(4):
-                        m.d.comb += [
-                            self.O[0].eq(~self._state[0]),
-                            self.O[1].eq(~self._state[1]),
-                            self.O[2].eq(self._state[2]),
-                            self.O[3].eq(self._state[3]),
-                            self.O[4].eq(~self._state[4]),
-                            self.O[5].eq(self._state[5]),
-                            self.O[6].eq(self._state[6]),
-                            self.O[7].eq(self._state[7]),
-                        ]
-
-                    with m.Case(5):
-                        m.d.comb += [
-                            self.O[0].eq(~self._state[0]),
-                            self.O[1].eq(self._state[1]),
-                            self.O[2].eq(self._state[2]),
-                            self.O[3].eq(~self._state[3]),
-                            self.O[4].eq(~self._state[4]),
-                            self.O[5].eq(~self._state[5]),
-                            self.O[6].eq(~self._state[6]),
-                            self.O[7].eq(self._state[7]),
-                        ]
-
-                    with m.Case(6):
-                        m.d.comb += [
-                            self.O[0].eq(self._state[0]),
-                            self.O[1].eq(self._state[1]),
-                            self.O[2].eq(~self._state[2]),
-                            self.O[3].eq(~self._state[3]),
-                            self.O[4].eq(~self._state[4]),
-                            self.O[5].eq(self._state[5]),
-                            self.O[6].eq(self._state[6]),
-                            self.O[7].eq(self._state[7]),
-                        ]
-
-                    with m.Case(7):
-                        m.d.comb += [
-                            self.O[0].eq(~self._state[0]),
-                            self.O[1].eq(self._state[1]),
-                            self.O[2].eq(~self._state[2]),
-                            self.O[3].eq(self._state[3]),
-                            self.O[4].eq(~self._state[4]),
-                            self.O[5].eq(~self._state[5]),
-                            self.O[6].eq(self._state[6]),
-                            self.O[7].eq(~self._state[7]),
-                        ]
-
-                    with m.Case(8):
-                        m.d.comb += [
-                            self.O[0].eq(~self._state[0]),
-                            self.O[1].eq(self._state[1]),
-                            self.O[2].eq(self._state[2]),
-                            self.O[3].eq(~self._state[3]),
-                            self.O[4].eq(~self._state[4]),
-                            self.O[5].eq(~self._state[5]),
-                            self.O[6].eq(~self._state[6]),
-                            self.O[7].eq(self._state[7]),
-                        ]
-
-                    with m.Case(9):
-                        m.d.comb += [
-                            self.O[0].eq(~self._state[0]),
-                            self.O[1].eq(~self._state[1]),
-                            self.O[2].eq(self._state[2]),
-                            self.O[3].eq(self._state[3]),
-                            self.O[4].eq(self._state[4]),
-                            self.O[5].eq(~self._state[5]),
-                            self.O[6].eq(~self._state[6]),
-                            self.O[7].eq(self._state[7]),
-                        ]
-
-                    with m.Case(10):
-                        m.d.comb += [
-                            self.O[0].eq(~self._state[0]),
-                            self.O[1].eq(~self._state[1]),
-                            self.O[2].eq(~self._state[2]),
-                            self.O[3].eq(self._state[3]),
-                            self.O[4].eq(self._state[4]),
-                            self.O[5].eq(self._state[5]),
-                            self.O[6].eq(~self._state[6]),
-                            self.O[7].eq(~self._state[7]),
-                        ]
-
-                    with m.Case(11):
-                        m.d.comb += [
-                            self.O[0].eq(self._state[0]),
-                            self.O[1].eq(self._state[1]),
-                            self.O[2].eq(self._state[2]),
-                            self.O[3].eq(~self._state[3]),
-                            self.O[4].eq(self._state[4]),
-                            self.O[5].eq(~self._state[5]),
-                            self.O[6].eq(~self._state[6]),
-                            self.O[7].eq(self._state[7]),
-                        ]
-
-                    with m.Case(12):
-                        m.d.comb += [
-                            self.O[0].eq(~self._state[0]),
-                            self.O[1].eq(~self._state[1]),
-                            self.O[2].eq(self._state[2]),
-                            self.O[3].eq(self._state[3]),
-                            self.O[4].eq(~self._state[4]),
-                            self.O[5].eq(self._state[5]),
-                            self.O[6].eq(self._state[6]),
-                            self.O[7].eq(~self._state[7]),
-                        ]
-
-                    with m.Case(13):
-                        m.d.comb += [
-                            self.O[0].eq(~self._state[0]),
-                            self.O[1].eq(self._state[1]),
-                            self.O[2].eq(~self._state[2]),
-                            self.O[3].eq(self._state[3]),
-                            self.O[4].eq(~self._state[4]),
-                            self.O[5].eq(~self._state[5]),
-                            self.O[6].eq(~self._state[6]),
-                            self.O[7].eq(~self._state[7]),
-                        ]
-
-                    with m.Case(14):
-                        m.d.comb += [
-                            self.O[0].eq(~self._state[0]),
-                            self.O[1].eq(~self._state[1]),
-                            self.O[2].eq(~self._state[2]),
-                            self.O[3].eq(~self._state[3]),
-                            self.O[4].eq(self._state[4]),
-                            self.O[5].eq(self._state[5]),
-                            self.O[6].eq(self._state[6]),
-                            self.O[7].eq(~self._state[7]),
-                        ]
-
-                    with m.Case(15):
-                        m.d.comb += [
-                            self.O[0].eq(self._state[0]),
-                            self.O[1].eq(self._state[1]),
-                            self.O[2].eq(self._state[2]),
-                            self.O[3].eq(self._state[3]),
-                            self.O[4].eq(self._state[4]),
-                            self.O[5].eq(self._state[5]),
-                            self.O[6].eq(self._state[6]),
-                            self.O[7].eq(self._state[7]),
-                        ]
+                m.d.comb += self.O.eq(self._state ^ flag_rom_rd_port.data)
 
             with m.Case(MessageSelect.TRY_AGAIN):
                 m.d.comb += self.O.eq(self.I_try_again)

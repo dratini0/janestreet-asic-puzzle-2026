@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
 
-from pyeda.boolalg.minimization import espresso_exprs
-from pyeda.boolalg.expr import Xor, Xnor
 from pyeda.boolalg.bfarray import exprvar, exprvars
+from pyeda.boolalg.expr import Xnor, Xor
+from pyeda.boolalg.minimization import espresso_exprs
 
 enable = exprvar("self.enable")
 I = exprvar("self.I")
@@ -86,7 +86,9 @@ def print_with_assumption(exprs, assumption, indent=8):
         # (a load of XORs) but nothing is over degree 8, so it's fine!
         simplifed = espresso_exprs(restricted.to_dnf())[0]
         if simplifed.equivalent(Xor(*simplifed.support)):
-            print(f"{' ' * indent}{name}.eq({' ^ '.join(map(str, simplifed.support))}),")
+            print(
+                f"{' ' * indent}{name}.eq({' ^ '.join(map(str, simplifed.support))}),"
+            )
         elif len(simplifed.support) > 1 and simplifed.equivalent(
             Xnor(*simplifed.support)
         ):
@@ -137,3 +139,28 @@ for i in range(8):
                 indent=20,
             )
             print("                ]\n")
+
+xor_table = [
+    sum(
+        int(
+            str(
+                formula.restrict(
+                    {
+                        message_select[0]: 0,
+                        message_select[1]: 1,
+                        message_select[2]: 0,
+                        **{
+                            char_index_bit: (i >> i_bit) & 1
+                            for i_bit, char_index_bit in enumerate(char_index)
+                        },
+                    }
+                )
+            ).startswith("~")
+        )
+        << o_bit
+        for o_bit, (_, formula) in enumerate(comb)
+    )
+    for i in range(16)
+]
+
+print(f"[{", ".join(hex(i) for i in xor_table)}]")
