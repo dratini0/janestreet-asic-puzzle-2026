@@ -79,52 +79,61 @@ comb = [
 # fmt: on
 
 
-def print_with_assumption(exprs, assumption):
+def print_with_assumption(exprs, assumption, indent=8):
     for name, formula in exprs:
-        print(F"        {name}.eq({formula.restrict(assumption)}),")
+        restricted = formula.restrict(assumption)
+        # This is exponential especially for the formulas we are studying here,
+        # (a load of XORs) but nothing is over degree 8, so it's fine!
+        simplifed = espresso_exprs(restricted.to_dnf())[0]
+        if simplifed.equivalent(Xor(*simplifed.support)):
+            print(f"{' ' * indent}{name}.eq({' ^ '.join(map(str, simplifed.support))}),")
+        elif len(simplifed.support) > 1 and simplifed.equivalent(
+            Xnor(*simplifed.support)
+        ):
+            print(
+                f"{' ' * indent}{name}.eq(~({' ^ '.join(map(str, simplifed.support))})),"
+            )
+        else:
+            print(f"{' ' * indent}{name}.eq({simplifed}),")
+
 
 print("with m.If(~self.enable & ~self.output_enable):")
 print("    m.d.sync += [")
 print_with_assumption(sync, {enable: 0, output_enable: 0})
 print("    ]\n")
 
-print("with m.If(self.enable & ~self.output_enable):")
+print("with m.If(self.enable):")
 print("    m.d.sync += [")
-print_with_assumption(sync, {enable: 1, output_enable: 0})
+print_with_assumption(sync, {enable: 1})
 print("    ]\n")
 
-print("with m.If(~self.enable & self.output_enable):")
+print("with m.Elif(self.output_enable):")
 print("    m.d.sync += [")
 print_with_assumption(sync, {enable: 0, output_enable: 1})
 print("    ]\n")
 
-print("with m.If(self.enable & self.output_enable):")
-print("    m.d.sync += [")
-print_with_assumption(sync, {enable: 1, output_enable: 1})
-print("    ]\n")
-
+print("with m.Switch(self.message_select):")
 for i in range(8):
-    print(f"with m.If(self.message_select == {i}):")
-    print("    m.d.sync += [")
-    print_with_assumption(comb, {message_select[bit]: (i >> bit) & 1 for bit in range(3)})
-    print("    ]\n")
-
-print("with m.If(~self.enable & self.output_enable):")
-print("    m.d.sync += [")
-for name, formula in sync:
-    formula = formula.restrict({enable: 0, output_enable: 1})
-    formula = espresso_exprs(formula.to_dnf())[0]
-    if formula.equivalent(Xor(*formula.support)):
-        print(f"        {name}.eq({" ^ ".join(map(str, formula.support))})")
-    elif formula.equivalent(Xnor(*formula.support)):
-        print(f"        {name}.eq(~({" ^ ".join(map(str, formula.support))}))")
+    print(f"    with m.Case({i}):")
+    if i != 2:
+        print("        m.d.comb += [")
+        print_with_assumption(
+            comb, {message_select[bit]: (i >> bit) & 1 for bit in range(3)}, indent=12
+        )
+        print("        ]\n")
     else:
-        print(F"        {name}.eq({formula}),")
-print("    ]\n")
-
-for i in range(16):
-    print(f"with m.If((self.message_select == 2) & (self.char_index == {i})):")
-    print("    m.d.sync += [")
-    print_with_assumption(comb, {message_select[0]: 0, message_select[1]: 1, message_select[2]: 0, **{char_index[bit]: (i >> bit) & 1 for bit in range(4)}})
-    print("    ]\n")
-
+        print("        with m.Switch(self.char_index):")
+        for i in range(16):
+            print(f"            with m.Case({i}):")
+            print("                m.d.comb += [")
+            print_with_assumption(
+                comb,
+                {
+                    message_select[0]: 0,
+                    message_select[1]: 1,
+                    message_select[2]: 0,
+                    **{char_index[bit]: (i >> bit) & 1 for bit in range(4)},
+                },
+                indent=20,
+            )
+            print("                ]\n")
