@@ -10,6 +10,7 @@ from amaranth.lib.wiring import In, Out
 def Buf(expr):
     return expr
 
+
 class DoneController(wiring.Component):
     y_overflow: In(1)
     x_overflow: In(1)
@@ -31,6 +32,7 @@ class DoneController(wiring.Component):
 
         return m
 
+
 class Counter11(wiring.Component):
     enable: In(1)
     increment: In(1)
@@ -50,6 +52,7 @@ class Counter11(wiring.Component):
 
         return m
 
+
 class EdgeChecker(wiring.Component):
     """
     Check if certain neighbours of the current pixel exist
@@ -65,6 +68,7 @@ class EdgeChecker(wiring.Component):
 
     This has also resulted in one of the constants
     """
+
     x: In(description=4)
     top_left_available: Out(1)
     top_available: Out(1)
@@ -86,7 +90,6 @@ class EdgeChecker(wiring.Component):
             # self._top.eq(self.y == 0),
             self._top.eq(0),
             self._right.eq(self.x == 10),
-
             self.top_left_available.eq(~self._top & ~self._left),
             self.top_available.eq(~self._top),
             self.top_right_available.eq(~self._top & ~self._right),
@@ -95,8 +98,10 @@ class EdgeChecker(wiring.Component):
 
         return m
 
+
 class AdjacencyChecker(wiring.Component):
     """No two adjacent pixels can be set (Moore neighbourhood)"""
+
     enable: In(1)
     I: In(1)
     top_left_available: In(1)
@@ -114,17 +119,26 @@ class AdjacencyChecker(wiring.Component):
     def elaborate(self, platform):
         m = Module()
 
-
         with m.If(self.enable):
             m.d.sync += self._sr.eq(Cat(self.I, self._sr[:11]))
 
-            with m.If(self.I & (self.top_left_available & self._sr[11] | self.top_available & self._sr[10] | self.top_right_available & self._sr[9] | self.left_available & self._sr[0])):
+            with m.If(
+                self.I
+                & (
+                    self.top_left_available & self._sr[11]
+                    | self.top_available & self._sr[10]
+                    | self.top_right_available & self._sr[9]
+                    | self.left_available & self._sr[0]
+                )
+            ):
                 m.d.sync += self.result.eq(0)
 
         return m
 
+
 class RowChecker(wiring.Component):
     """Every line has exactly 2 bits set"""
+
     enable: In(1)
     I: In(1)
     x_overflow: In(1)
@@ -153,14 +167,16 @@ class RowChecker(wiring.Component):
 
         return m
 
+
 class PopCntChecker(wiring.Component):
     """
     Asserts that there are exactly 22 bits set
-    
+
     This is redundan with the row, column, and region properties.
 
     Also triggers an easter egg when empty or full grids are supplied
     """
+
     enable: In(1)
     I: In(1)
     result: Out(1)
@@ -202,12 +218,15 @@ class SingleColumnChecker(wiring.Component):
     def elaborate(self, platform):
         m = Module()
 
-        with m.If((self.x == self._column) & self.I & self.enable & (self._counter != 3)):
+        with m.If(
+            (self.x == self._column) & self.I & self.enable & (self._counter != 3)
+        ):
             m.d.sync += self._counter.eq(self._counter + 1)
 
         m.d.comb += self.result.eq(self._counter == 2)
 
         return m
+
 
 class ColumnChecker(wiring.Component):
     enable: In(1)
@@ -233,6 +252,7 @@ class ColumnChecker(wiring.Component):
 
         return m
 
+
 class SuccessController(wiring.Component):
     done: In(1)
     adjacency_property: In(1)
@@ -253,11 +273,24 @@ class SuccessController(wiring.Component):
 
         with m.If(self.done & ~self.done_delayed):
             m.d.sync += [
-                self.success.eq(self.adjacency_property & self.row_property & self.popcnt_property & self.region_property & self.column_property),
-                self.almost_success.eq(~self.adjacency_property & self.row_property & self.popcnt_property & self.region_property & self.column_property),
+                self.success.eq(
+                    self.adjacency_property
+                    & self.row_property
+                    & self.popcnt_property
+                    & self.region_property
+                    & self.column_property
+                ),
+                self.almost_success.eq(
+                    ~self.adjacency_property
+                    & self.row_property
+                    & self.popcnt_property
+                    & self.region_property
+                    & self.column_property
+                ),
             ]
 
         return m
+
 
 class MessageSelect(Enum):
     EMPTY_SKY = 0
@@ -265,6 +298,7 @@ class MessageSelect(Enum):
     FLAG = 2
     TRY_AGAIN = 3
     TWO_NOT_TOUCH = 4
+
 
 class OutputController(wiring.Component):
     done_delayed: In(1)
@@ -319,6 +353,7 @@ class OutputController(wiring.Component):
 
         return m
 
+
 class OutputFlagObfuscator(wiring.Component):
     enable: In(1)
     I: In(1)
@@ -340,8 +375,18 @@ class OutputFlagObfuscator(wiring.Component):
         m = Module()
 
         with m.If(self.enable):
-            m.d.sync += self._state.eq(Cat(self.I ^ self._state[3] ^ self._state[4] ^ self._state[5] ^ self._state[7], self._state[:7]))
+            m.d.sync += self._state.eq(
+                Cat(
+                    self.I
+                    ^ self._state[3]
+                    ^ self._state[4]
+                    ^ self._state[5]
+                    ^ self._state[7],
+                    self._state[:7],
+                )
+            )
 
+        # fmt: off
         with m.Elif(self.output_enable):
             m.d.sync += [
                 self._state[0].eq(self._state[5] ^ self._state[2] ^ self._state[6]),
@@ -353,6 +398,7 @@ class OutputFlagObfuscator(wiring.Component):
                 self._state[6].eq(self._state[4] ^ self._state[2] ^ self._state[6] ^ self._state[3]),
                 self._state[7].eq(self._state[4] ^ self._state[7] ^ self._state[5] ^ self._state[3]),
             ]
+        # fmt: on
 
         with m.Switch(self.message_select):
             with m.Case(MessageSelect.EMPTY_SKY):
@@ -566,6 +612,7 @@ class OutputFlagObfuscator(wiring.Component):
 
         return m
 
+
 class OutputStringGenerator(wiring.Component):
     char_index: In(4)
     O: Out(8)
@@ -588,6 +635,7 @@ class OutputStringGenerator(wiring.Component):
 
         return m
 
+
 class Regions(wiring.Component):
     """
     Decides which region of the image a particular bit is in
@@ -602,6 +650,7 @@ class Regions(wiring.Component):
 
     Actually, bit order doesn't really matter, but it does make the checker look nicer
     """
+
     x: In(4)
     y: In(4)
     out: Out(4)
@@ -623,15 +672,20 @@ class Regions(wiring.Component):
     def elaborate(self, platform):
         m = Module()
 
-        m.submodules.rom = Memory(width=4, depth=256, init=list(chain.from_iterable(self.IMAGE)))
+        m.submodules.rom = Memory(
+            width=4, depth=256, init=list(chain.from_iterable(self.IMAGE))
+        )
         rd_port = m.submodules.rom.read_port(domain="comb")
 
         m.d.comb += [
-            rd_port.addr.eq(11 * self.y + self.x), # Yes, this is specifically how it's implemented, you can tell from the artifacts it generates with out-of-range inputs!
+            rd_port.addr.eq(
+                11 * self.y + self.x
+            ),  # Yes, this is specifically how it's implemented, you can tell from the artifacts it generates with out-of-range inputs!
             self.out.eq(rd_port.data),
         ]
 
         return m
+
 
 class puzzle(wiring.Component):
     I: In(1)
@@ -758,9 +812,12 @@ class puzzle(wiring.Component):
         m.submodules.output_string_big_bang = OutputStringGenerator("BIG BANG")
         m.submodules.output_string_empty_sky = OutputStringGenerator("EMPTY SKY")
         m.submodules.output_string_try_again = OutputStringGenerator("TRY AGAIN")
-        m.submodules.output_string_two_not_touch = OutputStringGenerator("TWO NOT TOUCH")
+        m.submodules.output_string_two_not_touch = OutputStringGenerator(
+            "TWO NOT TOUCH"
+        )
         m.submodules.regions = Regions()
 
+        # fmt: off
         m.d.comb += [
             m.submodules.done_controller.y_overflow.eq(m.submodules.y_counter.overflow),
             m.submodules.done_controller.x_overflow.eq(m.submodules.x_counter.overflow),
@@ -815,6 +872,7 @@ class puzzle(wiring.Component):
             m.submodules.regions.x.eq(m.submodules.x_counter.count),
             m.submodules.regions.y.eq(m.submodules.y_counter.count),
         ]
+        # fmt: on
 
         m.d.comb += [
             self.O.eq(m.submodules.output_controller.O),
@@ -926,112 +984,120 @@ class puzzle(wiring.Component):
 
         return m
 
+
 if __name__ == "__main__":
     from amaranth.back import verilog
+
     top = puzzle()
     with open(argv[1], "wt") as f:
-        f.write(verilog.convert(top, name="puzzle_solution", ports=[
-            top.I,
-            top.enable,
-            top.net_934,
-            top.net_3136,
-            top.net_1526,
-            top.net_832,
-            top.net_20,
-            top.net_380,
-            top.net_319,
-            top.net_1508,
-            top.net_435,
-            top.net_323,
-            top.net_378,
-            top.net_377,
-            top.net_2259,
-            top.net_2505,
-            top.net_1723,
-            top.net_1719,
-            top.net_1628,
-            top.net_1738,
-            top.net_1557,
-            top.net_719,
-            top.net_1084,
-            top.net_791,
-            top.net_343,
-            top.net_2386,
-            top.net_2463,
-            top.net_2459,
-            top.net_2480,
-            top.net_2475,
-            top.net_3283,
-            top.net_2474,
-            top.net_2471,
-            top.net_2393,
-            top.net_3830,
-            top.net_2416,
-            top.net_204,
-            top.net_203,
-            top.net_294,
-            top.net_226,
-            top.net_545,
-            top.net_1185,
-            top.net_341,
-            top.net_401,
-            top.net_399,
-            top.net_405,
-            top.net_349,
-            top.net_3771,
-            top.net_3920,
-            top.success,
-            top.net_1351,
-            top.net_1365,
-            top.net_3037,
-            top.net_3419,
-            top.net_3420,
-            top.net_3384,
-            top.net_1505,
-            top.net_1363,
-            top.O,
-            top.net_3617,
-            top.net_3516,
-            top.net_3435,
-            top.net_3543,
-            top.net_3552,
-            top.net_3613,
-            top.net_3518,
-            top.net_3818,
-            top.net_2232,
-            top.net_2006,
-            top.net_2313,
-            top.net_1977,
-            top.net_2315,
-            top.net_2088,
-            top.net_2298,
-            top.net_2120,
-            top.net_2460,
-            top.net_2117,
-            top.net_2240,
-            top.net_2189,
-            top.net_2461,
-            top.net_2154,
-            top.net_2479,
-            top.net_2004,
-            top.net_1927,
-            top.net_1816,
-            top.net_1936,
-            top.net_1905,
-            top.net_1815,
-            top.net_1928,
-            top.net_1907,
-            top.net_1822,
-            top.net_1425,
-            top.net_1693,
-            top.net_1694,
-            top.net_1516,
-            top.net_1420,
-            top.net_1559,
-            top.net_1629,
-            top.net_1472,
-            top.net_736,
-            top.net_1034,
-            top.net_857,
-            top.net_985,
-        ]))
+        f.write(
+            verilog.convert(
+                top,
+                name="puzzle_solution",
+                ports=[
+                    top.I,
+                    top.enable,
+                    top.net_934,
+                    top.net_3136,
+                    top.net_1526,
+                    top.net_832,
+                    top.net_20,
+                    top.net_380,
+                    top.net_319,
+                    top.net_1508,
+                    top.net_435,
+                    top.net_323,
+                    top.net_378,
+                    top.net_377,
+                    top.net_2259,
+                    top.net_2505,
+                    top.net_1723,
+                    top.net_1719,
+                    top.net_1628,
+                    top.net_1738,
+                    top.net_1557,
+                    top.net_719,
+                    top.net_1084,
+                    top.net_791,
+                    top.net_343,
+                    top.net_2386,
+                    top.net_2463,
+                    top.net_2459,
+                    top.net_2480,
+                    top.net_2475,
+                    top.net_3283,
+                    top.net_2474,
+                    top.net_2471,
+                    top.net_2393,
+                    top.net_3830,
+                    top.net_2416,
+                    top.net_204,
+                    top.net_203,
+                    top.net_294,
+                    top.net_226,
+                    top.net_545,
+                    top.net_1185,
+                    top.net_341,
+                    top.net_401,
+                    top.net_399,
+                    top.net_405,
+                    top.net_349,
+                    top.net_3771,
+                    top.net_3920,
+                    top.success,
+                    top.net_1351,
+                    top.net_1365,
+                    top.net_3037,
+                    top.net_3419,
+                    top.net_3420,
+                    top.net_3384,
+                    top.net_1505,
+                    top.net_1363,
+                    top.O,
+                    top.net_3617,
+                    top.net_3516,
+                    top.net_3435,
+                    top.net_3543,
+                    top.net_3552,
+                    top.net_3613,
+                    top.net_3518,
+                    top.net_3818,
+                    top.net_2232,
+                    top.net_2006,
+                    top.net_2313,
+                    top.net_1977,
+                    top.net_2315,
+                    top.net_2088,
+                    top.net_2298,
+                    top.net_2120,
+                    top.net_2460,
+                    top.net_2117,
+                    top.net_2240,
+                    top.net_2189,
+                    top.net_2461,
+                    top.net_2154,
+                    top.net_2479,
+                    top.net_2004,
+                    top.net_1927,
+                    top.net_1816,
+                    top.net_1936,
+                    top.net_1905,
+                    top.net_1815,
+                    top.net_1928,
+                    top.net_1907,
+                    top.net_1822,
+                    top.net_1425,
+                    top.net_1693,
+                    top.net_1694,
+                    top.net_1516,
+                    top.net_1420,
+                    top.net_1559,
+                    top.net_1629,
+                    top.net_1472,
+                    top.net_736,
+                    top.net_1034,
+                    top.net_857,
+                    top.net_985,
+                ],
+            )
+        )
