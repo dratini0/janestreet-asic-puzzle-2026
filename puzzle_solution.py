@@ -1,3 +1,4 @@
+from enum import Enum
 from faulthandler import enable
 from itertools import chain
 from sys import argv
@@ -259,7 +260,14 @@ class SuccessController(wiring.Component):
 
         return m
 
-class Output_MtCoronet(wiring.Component):
+class MessageSelect(Enum):
+    EMPTY_SKY = 0
+    BIG_BANG = 1
+    FLAG = 2
+    TRY_AGAIN = 3
+    TWO_NOT_TOUCH = 4
+
+class OutputController(wiring.Component):
     done_delayed: In(1)
     egg_almost_success: In(1)
     egg_full: In(1)
@@ -267,9 +275,7 @@ class Output_MtCoronet(wiring.Component):
     success: In(1)
     I: In(8)
     output_enable: Out(1)
-    message_select_1: Out(1)
-    message_select_2: Out(1)
-    message_select_3: Out(1)
+    message_select: Out(MessageSelect)
     char_index: Out(4)
     O: Out(8)
 
@@ -290,10 +296,22 @@ class Output_MtCoronet(wiring.Component):
         m.d.comb += [
             self.char_index.eq(self._char_index),
             self.output_enable.eq((self.done_delayed) & (self._char_index != 15)),
-            self.message_select_1.eq(~(self.egg_empty | ((self.success | self.egg_almost_success) & ~self.egg_full))),
-            self.message_select_2.eq(~((self.egg_empty) | (self.success) | (self.egg_full) | ~(self.egg_almost_success))),
-            self.message_select_3.eq(~(~self.success & self.egg_almost_success) & ~self.egg_full & ~self.egg_empty),
         ]
+
+        # Which order these are in is completely irrelevant, as the incoming
+        # signals are guaranteed to be one-hot-or-zero encoded. Still, I try to
+        # be faithful to the operation of each module!
+        # However, this order does make the bit order make a bit more sense.
+        with m.If(self.egg_empty):
+            m.d.comb += self.message_select.eq(MessageSelect.EMPTY_SKY)
+        with m.Elif(self.egg_full):
+            m.d.comb += self.message_select.eq(MessageSelect.BIG_BANG)
+        with m.Elif(self.success):
+            m.d.comb += self.message_select.eq(MessageSelect.FLAG)
+        with m.Elif(self.egg_almost_success):
+            m.d.comb += self.message_select.eq(MessageSelect.TWO_NOT_TOUCH)
+        with m.Else():
+            m.d.comb += self.message_select.eq(MessageSelect.TRY_AGAIN)
 
         with m.If(self.output_enable):
             m.d.comb += self.O.eq(self.I)
@@ -711,7 +729,7 @@ class puzzle(wiring.Component):
         m.submodules.column_checker = ColumnChecker()
         m.submodules.region_checker = ColumnChecker()
         m.submodules.success_controller = SuccessController()
-        m.submodules.output_mtcoronet = Output_MtCoronet()
+        m.submodules.output_controller = OutputController()
         m.submodules.output_eternaforest = Output_EternaForest()
         m.submodules.output_lakeacuity = Output_LakeAcuity()
         m.submodules.output_lakeverity = Output_LakeVerity()
@@ -750,14 +768,14 @@ class puzzle(wiring.Component):
             m.submodules.success_controller.region_property.eq(m.submodules.region_checker.result),
             m.submodules.success_controller.row_property.eq(m.submodules.row_checker.result),
             m.submodules.success_controller.popcnt_property.eq(m.submodules.popcnt_checker.result),
-            m.submodules.output_mtcoronet.done_delayed.eq(m.submodules.success_controller.done_delayed),
-            m.submodules.output_mtcoronet.egg_almost_success.eq(m.submodules.success_controller.almost_success),
-            m.submodules.output_mtcoronet.egg_full.eq(m.submodules.popcnt_checker.full),
-            m.submodules.output_mtcoronet.egg_empty.eq(m.submodules.popcnt_checker.empty),
-            m.submodules.output_mtcoronet.success.eq(m.submodules.success_controller.success),
-            m.submodules.output_mtcoronet.I.eq(m.submodules.output_eternaforest.O),
-            m.submodules.output_eternaforest.net_1351.eq(m.submodules.output_mtcoronet.char_index[0]),
-            m.submodules.output_eternaforest.net_1365.eq(m.submodules.output_mtcoronet.char_index[2]),
+            m.submodules.output_controller.done_delayed.eq(m.submodules.success_controller.done_delayed),
+            m.submodules.output_controller.egg_almost_success.eq(m.submodules.success_controller.almost_success),
+            m.submodules.output_controller.egg_full.eq(m.submodules.popcnt_checker.full),
+            m.submodules.output_controller.egg_empty.eq(m.submodules.popcnt_checker.empty),
+            m.submodules.output_controller.success.eq(m.submodules.success_controller.success),
+            m.submodules.output_controller.I.eq(m.submodules.output_eternaforest.O),
+            m.submodules.output_eternaforest.net_1351.eq(m.submodules.output_controller.char_index[0]),
+            m.submodules.output_eternaforest.net_1365.eq(m.submodules.output_controller.char_index[2]),
             m.submodules.output_eternaforest.net_2232.eq(m.submodules.output_lakeacuity.net_2232),
             m.submodules.output_eternaforest.net_2006.eq(m.submodules.output_lakeacuity.net_2006),
             m.submodules.output_eternaforest.net_1425.eq(m.submodules.output_lakevalor.net_1425),
@@ -776,11 +794,11 @@ class puzzle(wiring.Component):
             m.submodules.output_eternaforest.net_2240.eq(m.submodules.output_lakeacuity.net_2240),
             m.submodules.output_eternaforest.net_2189.eq(m.submodules.output_lakeacuity.net_2189),
             m.submodules.output_eternaforest.net_1420.eq(m.submodules.output_lakevalor.net_1420),
-            m.submodules.output_eternaforest.net_3037.eq(m.submodules.output_mtcoronet.output_enable),
+            m.submodules.output_eternaforest.net_3037.eq(m.submodules.output_controller.output_enable),
             m.submodules.output_eternaforest.net_934.eq(m.submodules.done_controller.enable_gated),
-            m.submodules.output_eternaforest.net_3419.eq(m.submodules.output_mtcoronet.message_select_1),
-            m.submodules.output_eternaforest.net_3420.eq(m.submodules.output_mtcoronet.message_select_2),
-            m.submodules.output_eternaforest.net_3384.eq(m.submodules.output_mtcoronet.message_select_3),
+            m.submodules.output_eternaforest.net_3419.eq(m.submodules.output_controller.message_select[0]),
+            m.submodules.output_eternaforest.net_3420.eq(m.submodules.output_controller.message_select[2]),
+            m.submodules.output_eternaforest.net_3384.eq(m.submodules.output_controller.message_select[1]),
             m.submodules.output_eternaforest.net_1559.eq(m.submodules.output_lakevalor.net_1559),
             m.submodules.output_eternaforest.net_1816.eq(m.submodules.output_lakeverity.net_1816),
             m.submodules.output_eternaforest.net_1936.eq(m.submodules.output_lakeverity.net_1936),
@@ -795,28 +813,28 @@ class puzzle(wiring.Component):
             m.submodules.output_eternaforest.net_2004.eq(m.submodules.output_lakeacuity.net_2004),
             m.submodules.output_eternaforest.net_1907.eq(m.submodules.output_lakeverity.net_1907),
             m.submodules.output_eternaforest.net_1822.eq(m.submodules.output_lakeverity.net_1822),
-            m.submodules.output_eternaforest.net_1505.eq(m.submodules.output_mtcoronet.char_index[3]),
+            m.submodules.output_eternaforest.net_1505.eq(m.submodules.output_controller.char_index[3]),
             m.submodules.output_eternaforest.I.eq(self.I),
-            m.submodules.output_eternaforest.net_1363.eq(m.submodules.output_mtcoronet.char_index[1]),
-            m.submodules.output_lakeacuity.net_1351.eq(m.submodules.output_mtcoronet.char_index[0]),
-            m.submodules.output_lakeacuity.net_1505.eq(m.submodules.output_mtcoronet.char_index[3]),
-            m.submodules.output_lakeacuity.net_1365.eq(m.submodules.output_mtcoronet.char_index[2]),
-            m.submodules.output_lakeacuity.net_1363.eq(m.submodules.output_mtcoronet.char_index[1]),
-            m.submodules.output_lakeverity.net_1363.eq(m.submodules.output_mtcoronet.char_index[1]),
-            m.submodules.output_lakeverity.net_1365.eq(m.submodules.output_mtcoronet.char_index[2]),
-            m.submodules.output_lakeverity.net_1351.eq(m.submodules.output_mtcoronet.char_index[0]),
-            m.submodules.output_lakeverity.net_1505.eq(m.submodules.output_mtcoronet.char_index[3]),
-            m.submodules.output_lakevalor.net_1365.eq(m.submodules.output_mtcoronet.char_index[2]),
-            m.submodules.output_lakevalor.net_1351.eq(m.submodules.output_mtcoronet.char_index[0]),
-            m.submodules.output_lakevalor.net_1505.eq(m.submodules.output_mtcoronet.char_index[3]),
-            m.submodules.output_lakevalor.net_1363.eq(m.submodules.output_mtcoronet.char_index[1]),
+            m.submodules.output_eternaforest.net_1363.eq(m.submodules.output_controller.char_index[1]),
+            m.submodules.output_lakeacuity.net_1351.eq(m.submodules.output_controller.char_index[0]),
+            m.submodules.output_lakeacuity.net_1505.eq(m.submodules.output_controller.char_index[3]),
+            m.submodules.output_lakeacuity.net_1365.eq(m.submodules.output_controller.char_index[2]),
+            m.submodules.output_lakeacuity.net_1363.eq(m.submodules.output_controller.char_index[1]),
+            m.submodules.output_lakeverity.net_1363.eq(m.submodules.output_controller.char_index[1]),
+            m.submodules.output_lakeverity.net_1365.eq(m.submodules.output_controller.char_index[2]),
+            m.submodules.output_lakeverity.net_1351.eq(m.submodules.output_controller.char_index[0]),
+            m.submodules.output_lakeverity.net_1505.eq(m.submodules.output_controller.char_index[3]),
+            m.submodules.output_lakevalor.net_1365.eq(m.submodules.output_controller.char_index[2]),
+            m.submodules.output_lakevalor.net_1351.eq(m.submodules.output_controller.char_index[0]),
+            m.submodules.output_lakevalor.net_1505.eq(m.submodules.output_controller.char_index[3]),
+            m.submodules.output_lakevalor.net_1363.eq(m.submodules.output_controller.char_index[1]),
             m.submodules.output_lakevalor.net_1447.eq(self.net_1447),
             m.submodules.regions.x.eq(m.submodules.x_counter.count),
             m.submodules.regions.y.eq(m.submodules.y_counter.count),
         ]
 
         m.d.comb += [
-            self.O.eq(m.submodules.output_mtcoronet.O),
+            self.O.eq(m.submodules.output_controller.O),
             self.success.eq(m.submodules.success_controller.success),
         ]
 
@@ -869,14 +887,14 @@ class puzzle(wiring.Component):
             self.net_349.eq(m.submodules.region_checker.results[1]),
             self.net_3771.eq(m.submodules.success_controller.done_delayed),
             self.net_3920.eq(m.submodules.success_controller.almost_success),
-            self.net_1351.eq(m.submodules.output_mtcoronet.char_index[0]),
-            self.net_1365.eq(m.submodules.output_mtcoronet.char_index[2]),
-            self.net_3037.eq(m.submodules.output_mtcoronet.output_enable),
-            self.net_3419.eq(m.submodules.output_mtcoronet.message_select_1),
-            self.net_3420.eq(m.submodules.output_mtcoronet.message_select_2),
-            self.net_3384.eq(m.submodules.output_mtcoronet.message_select_3),
-            self.net_1505.eq(m.submodules.output_mtcoronet.char_index[3]),
-            self.net_1363.eq(m.submodules.output_mtcoronet.char_index[1]),
+            self.net_1351.eq(m.submodules.output_controller.char_index[0]),
+            self.net_1365.eq(m.submodules.output_controller.char_index[2]),
+            self.net_3037.eq(m.submodules.output_controller.output_enable),
+            self.net_3419.eq(m.submodules.output_controller.message_select[0]),
+            self.net_3420.eq(m.submodules.output_controller.message_select[2]),
+            self.net_3384.eq(m.submodules.output_controller.message_select[1]),
+            self.net_1505.eq(m.submodules.output_controller.char_index[3]),
+            self.net_1363.eq(m.submodules.output_controller.char_index[1]),
             self.net_3617.eq(m.submodules.output_eternaforest.O[0]),
             self.net_3516.eq(m.submodules.output_eternaforest.O[2]),
             self.net_3435.eq(m.submodules.output_eternaforest.O[7]),
