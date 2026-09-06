@@ -13,6 +13,8 @@ This is a limitation of GitHub.
 ## AI disclaimer
 
 I have not used any AI tools to author this code, which I regret in retrospect.
+It could likely have helped with `export_json_netlist.py`, and maybe even with `netlist_to_amaranth.py`.
+
 The [fork of PyEDA](https://github.com/Speedata-io/pyeda) I have been using seems to be mostly maintained with Claude, however.
 
 ## Post-submission work
