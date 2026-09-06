@@ -146,9 +146,6 @@ class Module:
             "sky130_fd_sc_hd__dfrtp",
             "sky130_fd_sc_hd__dfstp",
             "sky130_fd_sc_hd__dfxtp",
-            "custom__dfre",
-            "custom__dfse",
-            "custom__dfe",
         }:
             result = f"self._{gate.output_netname}"
         elif gate.typename == "custom__const0":
@@ -393,9 +390,6 @@ class Module:
                         "sky130_fd_sc_hd__dfrtp",
                         "sky130_fd_sc_hd__dfstp",
                         "sky130_fd_sc_hd__dfxtp",
-                        "custom__dfre",
-                        "custom__dfse",
-                        "custom__dfe",
                     }:
                         intermediates[name] = gate.output_netname
 
@@ -412,11 +406,11 @@ class Module:
         for intermediate_net in intermediates.values():
             f.write(f"        self._{intermediate_net} = Signal(1)\n")
         for gate in self.gates.values():
-            if gate.typename in {"sky130_fd_sc_hd__dfrtp", "custom__dfre"}:
+            if gate.typename == "sky130_fd_sc_hd__dfrtp":
                 f.write(f"        self._{gate.output_netname} = Signal(1, init=0)\n")
-            if gate.typename in {"sky130_fd_sc_hd__dfstp", "custom__dfse"}:
+            if gate.typename == "sky130_fd_sc_hd__dfstp":
                 f.write(f"        self._{gate.output_netname} = Signal(1, init=1)\n")
-            if gate.typename in {"sky130_fd_sc_hd__dfxtp", "custom__dfe"}:
+            if gate.typename == "sky130_fd_sc_hd__dfxtp":
                 f.write(
                     f"        self._{gate.output_netname} = Signal(1, reset_less=True)\n"
                 )
@@ -442,25 +436,6 @@ class Module:
                     f"            self._{gate.output_netname}.eq({self.pretty_print_combinatorial_expression(gate.inputs['D'], intermediates)}),\n"
                 )
         f.write("        ]\n\n")
-
-        flops_with_enable = [
-            gate
-            for gate in self.gates.values()
-            if gate.typename in {"custom__dfre", "custom__dfse", "custom__dfe"}
-        ]
-        flops_with_enable.sort(key=lambda gate: gate.inputs["EN"])
-        for enable, group in groupby(
-            flops_with_enable, key=lambda gate: gate.inputs["EN"]
-        ):
-            f.write(
-                f"        with m.If({self.pretty_print_combinatorial_expression(enable, intermediates)}):\n"
-            )
-            f.write("            m.d.sync += [\n")
-            for gate in group:
-                f.write(
-                    f"                self._{gate.output_netname}.eq({self.pretty_print_combinatorial_expression(gate.inputs['D'], intermediates)}),\n"
-                )
-            f.write("            ]\n\n")
 
         f.write("        m.d.comb += [\n")
         for pin, driver in self.outputs.items():
@@ -623,33 +598,6 @@ class Module:
         print("Pruning clock and reset trees")
         self.prune()
 
-    def create_clock_enables(self):
-        for name, gate in self.gates.items():
-            if gate.typename in {
-                "sky130_fd_sc_hd__dfrtp",
-                "sky130_fd_sc_hd__dfstp",
-                "sky130_fd_sc_hd__dfxtp",
-            }:
-                input_gate = self.gates[gate.inputs["D"]]
-                if input_gate.typename == "sky130_fd_sc_hd__mux2":
-                    assert input_gate.inputs["A1"] != name, (
-                        "inverted enable inputs not supported"
-                    )
-                    if input_gate.inputs["A0"] == name:
-                        print(
-                            f"Adding a clock enable ({input_gate.inputs['S']}) to a {gate.typename}"
-                        )
-                        gate.typename = {
-                            "sky130_fd_sc_hd__dfrtp": "custom__dfre",
-                            "sky130_fd_sc_hd__dfstp": "custom__dfse",
-                            "sky130_fd_sc_hd__dfxtp": "custom__dfe",
-                        }[gate.typename]
-                        gate.inputs["D"] = input_gate.inputs["A1"]
-                        gate.inputs["EN"] = input_gate.inputs["S"]
-
-        print("Pruning muxes absorbed by clock enable'd flipflops")
-        self.prune()
-
     def visualize_lumps(self, lumps: list[Lump] | None):
         import matplotlib.pyplot as plt
         from matplotlib.patches import Rectangle
@@ -663,9 +611,6 @@ class Module:
                 "sky130_fd_sc_hd__dfrtp",
                 "sky130_fd_sc_hd__dfstp",
                 "sky130_fd_sc_hd__dfxtp",
-                "custom__dfre",
-                "custom__dfse",
-                "custom__dfe",
             }
         ]
         sequential_gates = [
@@ -676,9 +621,6 @@ class Module:
                 "sky130_fd_sc_hd__dfrtp",
                 "sky130_fd_sc_hd__dfstp",
                 "sky130_fd_sc_hd__dfxtp",
-                "custom__dfre",
-                "custom__dfse",
-                "custom__dfe",
             }
         ]
 
@@ -780,7 +722,6 @@ def generate_amaranth(in_: Path, out: Path, enable_lumping=True):
     top = Module.load(in_)
     top.sanitize_net_names()
     top.remove_clock_and_reset()
-    top.create_clock_enables()
 
     if enable_lumping:
         if top.name not in LUMPS:
@@ -887,7 +828,6 @@ def debug_lumps(in_: Path):
     top = Module.load(in_)
     top.sanitize_net_names()
     top.remove_clock_and_reset()
-    top.create_clock_enables()
     top.visualize_lumps(LUMPS.get(top.name))
 
 
