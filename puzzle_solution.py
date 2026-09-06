@@ -7,11 +7,14 @@ from amaranth.lib import wiring
 from amaranth.lib.wiring import In, Out
 
 
-def Buf(expr):
-    return expr
-
-
 class DoneController(wiring.Component):
+    """
+    Figures out when input is done
+
+    Once both 11-bit counters overflow, raises the done flag and gates off
+    the enable signal.
+    """
+
     y_overflow: In(1)
     x_overflow: In(1)
     enable: In(1)
@@ -34,6 +37,8 @@ class DoneController(wiring.Component):
 
 
 class Counter11(wiring.Component):
+    """11-period counter"""
+
     enable: In(1)
     increment: In(1)
     count: Out(4, init=0)
@@ -172,7 +177,7 @@ class PopCntChecker(wiring.Component):
     """
     Asserts that there are exactly 22 bits set
 
-    This is redundan with the row, column, and region properties.
+    This is redundant with the row, column, and region properties.
 
     Also triggers an easter egg when empty or full grids are supplied
     """
@@ -204,6 +209,8 @@ class PopCntChecker(wiring.Component):
 
 
 class SingleColumnChecker(wiring.Component):
+    """A checks that there are exactly 2 bits set in its assigned column/region"""
+
     enable: In(1)
     I: In(1)
     x: In(4)
@@ -229,6 +236,12 @@ class SingleColumnChecker(wiring.Component):
 
 
 class ColumnChecker(wiring.Component):
+    """
+    Checks that every column has exactly 2 bits set in it.
+
+    This can be reused to do the same with regions instead of columns.
+    """
+
     enable: In(1)
     I: In(1)
     x: In(4)
@@ -253,7 +266,60 @@ class ColumnChecker(wiring.Component):
         return m
 
 
+class Regions(wiring.Component):
+    """
+    Decides which region of the image a particular bit is in
+
+    Represents an image with the letters JSC written across it
+
+    JSC presumably stands for Jane Street Capital
+
+    This permutation of bits was chosen because:
+    * The letters J, S and C, correspond nicely to values 0, 1 and 2
+    * The maximum value of the image is 10, much like the counters
+
+    Actually, bit order doesn't really matter, but it does make the checker look nicer
+    """
+
+    x: In(4)
+    y: In(4)
+    out: Out(4)
+
+    IMAGE = (
+        (6, 6, 6, 6, 6, 8, 8, 5, 4, 4, 9),
+        (6, 6, 0, 6, 6, 8, 5, 5, 4, 4, 9),
+        (6, 6, 0, 8, 8, 8, 8, 5, 5, 4, 9),
+        (6, 6, 0, 8, 1, 1, 1, 9, 5, 5, 9),
+        (0, 6, 0, 8, 1, 9, 9, 9, 9, 9, 9),
+        (0, 0, 0, 8, 1, 1, 1, 9, 2, 2, 2),
+        (8, 8, 8, 8, 8, 8, 1, 9, 2, 10, 10),
+        (8, 7, 7, 7, 1, 1, 1, 9, 2, 10, 10),
+        (8, 7, 7, 3, 9, 9, 9, 9, 2, 10, 10),
+        (8, 8, 7, 3, 3, 9, 9, 9, 2, 2, 2),
+        (8, 7, 7, 3, 9, 9, 9, 9, 9, 9, 9),
+    )
+
+    def elaborate(self, platform):
+        m = Module()
+
+        m.submodules.rom = Memory(
+            width=4, depth=256, init=list(chain.from_iterable(self.IMAGE))
+        )
+        rd_port = m.submodules.rom.read_port(domain="comb")
+
+        m.d.comb += [
+            rd_port.addr.eq(
+                11 * self.y + self.x
+            ),  # Yes, this is specifically how it's implemented, you can tell from the artifacts it generates with out-of-range inputs!
+            self.out.eq(rd_port.data),
+        ]
+
+        return m
+
+
 class SuccessController(wiring.Component):
+    """Once done, checks if all conditions are met, and emits success"""
+
     done: In(1)
     adjacency_property: In(1)
     column_property: In(1)
@@ -301,6 +367,17 @@ class MessageSelect(Enum):
 
 
 class OutputController(wiring.Component):
+    """
+    Gates and controls the string output
+
+    Once the done signal is received, it starts a counter, which is used to
+    index the character generator ROMs. Once this counter reaches 15, the output
+    is blanked out.
+
+    Additionally, it encodes the success and easter egg signals into an index
+    between 0 and 4 (see MessageSelect)
+    """
+
     done_delayed: In(1)
     egg_almost_success: In(1)
     egg_full: In(1)
@@ -355,6 +432,15 @@ class OutputController(wiring.Component):
 
 
 class OutputFlagObfuscator(wiring.Component):
+    """
+    Selects output message, as well as obfuscating the flag
+
+    While the circuit is getting input, it runs a CRC algorithm in it. Once the
+    output is enabled, it runs the CRC at 8 bits a clock with 0 input
+    (effectively, running the LFSR that was implementing the CRC) and XORs the
+    obfuscated flag value with its state.
+    """
+
     enable: In(1)
     I: In(1)
     output_enable: In(1)
@@ -442,6 +528,8 @@ class OutputFlagObfuscator(wiring.Component):
 
 
 class OutputStringGenerator(wiring.Component):
+    """A small ROM that contains a string of up to 16B"""
+
     char_index: In(4)
     O: Out(8)
 
@@ -459,57 +547,6 @@ class OutputStringGenerator(wiring.Component):
         m.d.comb += [
             rd_port.addr.eq(self.char_index),
             self.O.eq(rd_port.data),
-        ]
-
-        return m
-
-
-class Regions(wiring.Component):
-    """
-    Decides which region of the image a particular bit is in
-
-    Represents an image with the letters JSC written across it
-
-    JSC presumably stands for Jane Street Capital
-
-    This permutation of bits was chosen because:
-    * The letters J, S and C, correspond nicely to values 0, 1 and 2
-    * The maximum value of the image is 10, much like the counters
-
-    Actually, bit order doesn't really matter, but it does make the checker look nicer
-    """
-
-    x: In(4)
-    y: In(4)
-    out: Out(4)
-
-    IMAGE = (
-        (6, 6, 6, 6, 6, 8, 8, 5, 4, 4, 9),
-        (6, 6, 0, 6, 6, 8, 5, 5, 4, 4, 9),
-        (6, 6, 0, 8, 8, 8, 8, 5, 5, 4, 9),
-        (6, 6, 0, 8, 1, 1, 1, 9, 5, 5, 9),
-        (0, 6, 0, 8, 1, 9, 9, 9, 9, 9, 9),
-        (0, 0, 0, 8, 1, 1, 1, 9, 2, 2, 2),
-        (8, 8, 8, 8, 8, 8, 1, 9, 2, 10, 10),
-        (8, 7, 7, 7, 1, 1, 1, 9, 2, 10, 10),
-        (8, 7, 7, 3, 9, 9, 9, 9, 2, 10, 10),
-        (8, 8, 7, 3, 3, 9, 9, 9, 2, 2, 2),
-        (8, 7, 7, 3, 9, 9, 9, 9, 9, 9, 9),
-    )
-
-    def elaborate(self, platform):
-        m = Module()
-
-        m.submodules.rom = Memory(
-            width=4, depth=256, init=list(chain.from_iterable(self.IMAGE))
-        )
-        rd_port = m.submodules.rom.read_port(domain="comb")
-
-        m.d.comb += [
-            rd_port.addr.eq(
-                11 * self.y + self.x
-            ),  # Yes, this is specifically how it's implemented, you can tell from the artifacts it generates with out-of-range inputs!
-            self.out.eq(rd_port.data),
         ]
 
         return m
@@ -633,6 +670,7 @@ class puzzle(wiring.Component):
         m.submodules.edge_checker = EdgeChecker()
         m.submodules.popcnt_checker = PopCntChecker()
         m.submodules.column_checker = ColumnChecker()
+        m.submodules.regions = Regions()
         m.submodules.region_checker = ColumnChecker()
         m.submodules.success_controller = SuccessController()
         m.submodules.output_controller = OutputController()
@@ -643,7 +681,6 @@ class puzzle(wiring.Component):
         m.submodules.output_string_two_not_touch = OutputStringGenerator(
             "TWO NOT TOUCH"
         )
-        m.submodules.regions = Regions()
 
         # fmt: off
         m.d.comb += [
@@ -669,6 +706,8 @@ class puzzle(wiring.Component):
             m.submodules.column_checker.enable.eq(m.submodules.done_controller.enable_gated),
             m.submodules.column_checker.I.eq(self.I),
             m.submodules.column_checker.x.eq(m.submodules.x_counter.count),
+            m.submodules.regions.x.eq(m.submodules.x_counter.count),
+            m.submodules.regions.y.eq(m.submodules.y_counter.count),
             m.submodules.region_checker.enable.eq(m.submodules.done_controller.enable_gated),
             m.submodules.region_checker.I.eq(self.I),
             m.submodules.region_checker.x.eq(m.submodules.regions.out),
@@ -697,8 +736,6 @@ class puzzle(wiring.Component):
             m.submodules.output_string_empty_sky.char_index.eq(m.submodules.output_controller.char_index),
             m.submodules.output_string_try_again.char_index.eq(m.submodules.output_controller.char_index),
             m.submodules.output_string_two_not_touch.char_index.eq(m.submodules.output_controller.char_index),
-            m.submodules.regions.x.eq(m.submodules.x_counter.count),
-            m.submodules.regions.y.eq(m.submodules.y_counter.count),
         ]
         # fmt: on
 
