@@ -1,5 +1,4 @@
 from enum import Enum
-from functools import reduce
 from itertools import chain
 from sys import argv
 
@@ -369,11 +368,12 @@ class OutputFlagObfuscator(wiring.Component):
 
     def __init__(self):
         self._state = Signal(8, init=0xA5)
+        self._state_after_8_steps = Signal(8)
 
         super().__init__()
 
     def step(self, state, input):
-        return Cat(input ^ state[3] ^ state[4] ^ state[5] ^ state[7], state[:7])
+        return input ^ state[3] ^ state[4] ^ state[5] ^ state[7]
 
     def elaborate(self, platform):
         m = Module()
@@ -404,13 +404,20 @@ class OutputFlagObfuscator(wiring.Component):
 
         m.d.comb += flag_rom_rd_port.addr.eq(self.char_index)
 
-        with m.If(self.enable):
-            m.d.sync += self._state.eq(self.step(self._state, self.I))
+        m.d.comb += [
+            self._state_after_8_steps[i].eq(
+                self.step(Cat(self._state_after_8_steps, self._state)[i + 1 : i + 9], 0)
+            )
+            for i in range(8)
+        ]
 
-        # fmt: off
+        with m.If(self.enable):
+            m.d.sync += self._state.eq(
+                Cat(self.step(self._state, self.I), self._state[:7])
+            )
+
         with m.Elif(self.output_enable):
-            m.d.sync += self._state.eq(reduce(self.step, [0] * 8, initial=self._state))
-        # fmt: on
+            m.d.sync += self._state.eq(self._state_after_8_steps)
 
         with m.Switch(self.message_select):
             with m.Case(MessageSelect.EMPTY_SKY):
