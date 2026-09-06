@@ -4,6 +4,7 @@ module puzzle_equivalence_test (
     input  wire clk,
     input  wire rst_n,
     input  wire I,
+    input  wire net_1447,
     output wire success_recovered_verilog,
     output wire success_amaranth,
     output wire success_solution,
@@ -27,6 +28,7 @@ module puzzle_equivalence_test (
         .\O[7] (O_recovered_verilog[7]),
         .enable(enable)
     );
+    assign recovered_verilog.net_1447 = ~recovered_verilog.net_1505;
 
     puzzle_amaranth amaranth (
         .clk(clk),
@@ -43,6 +45,7 @@ module puzzle_equivalence_test (
         .O_7_(O_amaranth[7]),
         .enable(enable)
     );
+    assign amaranth.net_1447 = ~amaranth.net_1505;
 
     puzzle_solution solution (
         .clk(clk),

@@ -1,5 +1,4 @@
 from enum import Enum
-from faulthandler import enable
 from itertools import chain
 from sys import argv
 
@@ -320,55 +319,20 @@ class OutputController(wiring.Component):
 
         return m
 
-class Output_EternaForest(wiring.Component):
+class OutputFlagObfuscator(wiring.Component):
     enable: In(1)
     I: In(1)
     output_enable: In(1)
     char_index: In(4)
     message_select: In(MessageSelect)
-    net_2232: In(1)
-    net_2006: In(1)
-    net_1425: In(1)
-    net_1693: In(1)
-    net_1694: In(1)
-    net_1516: In(1)
-    net_2313: In(1)
-    net_1977: In(1)
-    net_1927: In(1)
-    net_2315: In(1)
-    net_2088: In(1)
-    net_2298: In(1)
-    net_2120: In(1)
-    net_2460: In(1)
-    net_2117: In(1)
-    net_2240: In(1)
-    net_2189: In(1)
-    net_1420: In(1)
-    net_1559: In(1)
-    net_1816: In(1)
-    net_1936: In(1)
-    net_1629: In(1)
-    net_1472: In(1)
-    net_2461: In(1)
-    net_2154: In(1)
-    net_1905: In(1)
-    net_1815: In(1)
-    net_1928: In(1)
-    net_2479: In(1)
-    net_2004: In(1)
-    net_1907: In(1)
-    net_1822: In(1)
+    I_empty_sky: In(8)
+    I_big_bang: In(8)
+    I_try_again: In(8)
+    I_two_not_touch: In(8)
     O: Out(8)
 
     def __init__(self):
-        self._net_2949 = Signal(1, init=0)
-        self._net_2609 = Signal(1, init=0)
-        self._net_2676 = Signal(1, init=0)
-        self._net_2689 = Signal(1, init=1)
-        self._net_2826 = Signal(1, init=1)
-        self._net_2674 = Signal(1, init=1)
-        self._net_2743 = Signal(1, init=1)
-        self._net_2752 = Signal(1, init=0)
+        self._state = Signal(8, init=0xA5)
 
         super().__init__()
 
@@ -376,465 +340,250 @@ class Output_EternaForest(wiring.Component):
         m = Module()
 
         with m.If(self.enable):
-            m.d.sync += [
-                self._net_2949.eq(self._net_2674),
-                self._net_2609.eq(self._net_2689),
-                self._net_2676.eq(self._net_2826),
-                self._net_2689.eq(self._net_2949),
-                self._net_2826.eq(self._net_2752),
-                self._net_2674.eq(self._net_2752 ^ self._net_2609 ^ self._net_2743 ^ self._net_2826 ^ self.I),
-                self._net_2743.eq(self._net_2676),
-                self._net_2752.eq(self._net_2609),
-            ]
+            m.d.sync += self._state.eq(Cat(self.I ^ self._state[3] ^ self._state[4] ^ self._state[5] ^ self._state[7], self._state[:7]))
 
         with m.Elif(self.output_enable):
             m.d.sync += [
-                self._net_2949.eq(self._net_2743 ^ self._net_2676 ^ self._net_2609),
-                self._net_2609.eq(self._net_2949 ^ self._net_2752 ^ self._net_2674 ^ self._net_2743 ^ self._net_2826),
-                self._net_2676.eq(self._net_2752 ^ self._net_2689 ^ self._net_2676 ^ self._net_2609),
-                self._net_2689.eq(self._net_2743 ^ self._net_2674 ^ self._net_2826 ^ self._net_2676),
-                self._net_2826.eq(self._net_2949 ^ self._net_2826 ^ self._net_2689 ^ self._net_2609),
-                self._net_2674.eq(self._net_2826 ^ self._net_2689 ^ self._net_2676),
-                self._net_2743.eq(self._net_2752 ^ self._net_2743 ^ self._net_2826 ^ self._net_2609),
-                self._net_2752.eq(self._net_2949 ^ self._net_2752 ^ self._net_2674 ^ self._net_2689),
+                self._state[0].eq(self._state[5] ^ self._state[2] ^ self._state[6]),
+                self._state[1].eq(self._state[7] ^ self._state[6] ^ self._state[3]),
+                self._state[2].eq(self._state[7] ^ self._state[0] ^ self._state[5] ^ self._state[6]),
+                self._state[3].eq(self._state[1] ^ self._state[4] ^ self._state[0] ^ self._state[7] ^ self._state[5]),
+                self._state[4].eq(self._state[1] ^ self._state[4] ^ self._state[0] ^ self._state[2]),
+                self._state[5].eq(self._state[1] ^ self._state[5] ^ self._state[2] ^ self._state[3]),
+                self._state[6].eq(self._state[4] ^ self._state[2] ^ self._state[6] ^ self._state[3]),
+                self._state[7].eq(self._state[4] ^ self._state[7] ^ self._state[5] ^ self._state[3]),
             ]
 
         with m.Switch(self.message_select):
-            with m.Case(0):
-                m.d.comb += [
-                    self.O[0].eq(self.net_2006),
-                    self.O[1].eq(self.net_2088),
-                    self.O[2].eq(self.net_1977),
-                    self.O[3].eq(self.net_2117),
-                    self.O[4].eq(self.net_2189),
-                    self.O[5].eq(self.net_2120),
-                    self.O[6].eq(self.net_2154),
-                    self.O[7].eq(self.net_2004),
-                ]
+            with m.Case(MessageSelect.EMPTY_SKY):
+                m.d.comb += self.O.eq(self.I_empty_sky)
 
-            with m.Case(1):
-                m.d.comb += [
-                    self.O[0].eq(self.net_2232),
-                    self.O[1].eq(self.net_2315),
-                    self.O[2].eq(self.net_2313),
-                    self.O[3].eq(self.net_2460),
-                    self.O[4].eq(self.net_2240),
-                    self.O[5].eq(self.net_2298),
-                    self.O[6].eq(self.net_2461),
-                    self.O[7].eq(self.net_2479),
-                ]
+            with m.Case(MessageSelect.BIG_BANG):
+                m.d.comb += self.O.eq(self.I_big_bang)
 
-            with m.Case(2):
+            with m.Case(MessageSelect.FLAG):
                 with m.Switch(self.char_index):
                     with m.Case(0):
                         m.d.comb += [
-                            self.O[0].eq(~self._net_2674),
-                            self.O[1].eq(self._net_2949),
-                            self.O[2].eq(~self._net_2689),
-                            self.O[3].eq(~self._net_2609),
-                            self.O[4].eq(self._net_2752),
-                            self.O[5].eq(self._net_2826),
-                            self.O[6].eq(~self._net_2676),
-                            self.O[7].eq(self._net_2743),
+                            self.O[0].eq(~self._state[0]),
+                            self.O[1].eq(self._state[1]),
+                            self.O[2].eq(~self._state[2]),
+                            self.O[3].eq(~self._state[3]),
+                            self.O[4].eq(self._state[4]),
+                            self.O[5].eq(self._state[5]),
+                            self.O[6].eq(~self._state[6]),
+                            self.O[7].eq(self._state[7]),
                         ]
 
                     with m.Case(1):
                         m.d.comb += [
-                            self.O[0].eq(~self._net_2674),
-                            self.O[1].eq(self._net_2949),
-                            self.O[2].eq(~self._net_2689),
-                            self.O[3].eq(~self._net_2609),
-                            self.O[4].eq(self._net_2752),
-                            self.O[5].eq(~self._net_2826),
-                            self.O[6].eq(self._net_2676),
-                            self.O[7].eq(~self._net_2743),
+                            self.O[0].eq(~self._state[0]),
+                            self.O[1].eq(self._state[1]),
+                            self.O[2].eq(~self._state[2]),
+                            self.O[3].eq(~self._state[3]),
+                            self.O[4].eq(self._state[4]),
+                            self.O[5].eq(~self._state[5]),
+                            self.O[6].eq(self._state[6]),
+                            self.O[7].eq(~self._state[7]),
                         ]
 
                     with m.Case(2):
                         m.d.comb += [
-                            self.O[0].eq(~self._net_2674),
-                            self.O[1].eq(~self._net_2949),
-                            self.O[2].eq(self._net_2689),
-                            self.O[3].eq(~self._net_2609),
-                            self.O[4].eq(~self._net_2752),
-                            self.O[5].eq(~self._net_2826),
-                            self.O[6].eq(~self._net_2676),
-                            self.O[7].eq(~self._net_2743),
+                            self.O[0].eq(~self._state[0]),
+                            self.O[1].eq(~self._state[1]),
+                            self.O[2].eq(self._state[2]),
+                            self.O[3].eq(~self._state[3]),
+                            self.O[4].eq(~self._state[4]),
+                            self.O[5].eq(~self._state[5]),
+                            self.O[6].eq(~self._state[6]),
+                            self.O[7].eq(~self._state[7]),
                         ]
 
                     with m.Case(3):
                         m.d.comb += [
-                            self.O[0].eq(~self._net_2674),
-                            self.O[1].eq(~self._net_2949),
-                            self.O[2].eq(self._net_2689),
-                            self.O[3].eq(self._net_2609),
-                            self.O[4].eq(self._net_2752),
-                            self.O[5].eq(self._net_2826),
-                            self.O[6].eq(self._net_2676),
-                            self.O[7].eq(~self._net_2743),
+                            self.O[0].eq(~self._state[0]),
+                            self.O[1].eq(~self._state[1]),
+                            self.O[2].eq(self._state[2]),
+                            self.O[3].eq(self._state[3]),
+                            self.O[4].eq(self._state[4]),
+                            self.O[5].eq(self._state[5]),
+                            self.O[6].eq(self._state[6]),
+                            self.O[7].eq(~self._state[7]),
                         ]
 
                     with m.Case(4):
                         m.d.comb += [
-                            self.O[0].eq(~self._net_2674),
-                            self.O[1].eq(~self._net_2949),
-                            self.O[2].eq(self._net_2689),
-                            self.O[3].eq(self._net_2609),
-                            self.O[4].eq(~self._net_2752),
-                            self.O[5].eq(self._net_2826),
-                            self.O[6].eq(self._net_2676),
-                            self.O[7].eq(self._net_2743),
+                            self.O[0].eq(~self._state[0]),
+                            self.O[1].eq(~self._state[1]),
+                            self.O[2].eq(self._state[2]),
+                            self.O[3].eq(self._state[3]),
+                            self.O[4].eq(~self._state[4]),
+                            self.O[5].eq(self._state[5]),
+                            self.O[6].eq(self._state[6]),
+                            self.O[7].eq(self._state[7]),
                         ]
 
                     with m.Case(5):
                         m.d.comb += [
-                            self.O[0].eq(~self._net_2674),
-                            self.O[1].eq(self._net_2949),
-                            self.O[2].eq(self._net_2689),
-                            self.O[3].eq(~self._net_2609),
-                            self.O[4].eq(~self._net_2752),
-                            self.O[5].eq(~self._net_2826),
-                            self.O[6].eq(~self._net_2676),
-                            self.O[7].eq(self._net_2743),
+                            self.O[0].eq(~self._state[0]),
+                            self.O[1].eq(self._state[1]),
+                            self.O[2].eq(self._state[2]),
+                            self.O[3].eq(~self._state[3]),
+                            self.O[4].eq(~self._state[4]),
+                            self.O[5].eq(~self._state[5]),
+                            self.O[6].eq(~self._state[6]),
+                            self.O[7].eq(self._state[7]),
                         ]
 
                     with m.Case(6):
                         m.d.comb += [
-                            self.O[0].eq(self._net_2674),
-                            self.O[1].eq(self._net_2949),
-                            self.O[2].eq(~self._net_2689),
-                            self.O[3].eq(~self._net_2609),
-                            self.O[4].eq(~self._net_2752),
-                            self.O[5].eq(self._net_2826),
-                            self.O[6].eq(self._net_2676),
-                            self.O[7].eq(self._net_2743),
+                            self.O[0].eq(self._state[0]),
+                            self.O[1].eq(self._state[1]),
+                            self.O[2].eq(~self._state[2]),
+                            self.O[3].eq(~self._state[3]),
+                            self.O[4].eq(~self._state[4]),
+                            self.O[5].eq(self._state[5]),
+                            self.O[6].eq(self._state[6]),
+                            self.O[7].eq(self._state[7]),
                         ]
 
                     with m.Case(7):
                         m.d.comb += [
-                            self.O[0].eq(~self._net_2674),
-                            self.O[1].eq(self._net_2949),
-                            self.O[2].eq(~self._net_2689),
-                            self.O[3].eq(self._net_2609),
-                            self.O[4].eq(~self._net_2752),
-                            self.O[5].eq(~self._net_2826),
-                            self.O[6].eq(self._net_2676),
-                            self.O[7].eq(~self._net_2743),
+                            self.O[0].eq(~self._state[0]),
+                            self.O[1].eq(self._state[1]),
+                            self.O[2].eq(~self._state[2]),
+                            self.O[3].eq(self._state[3]),
+                            self.O[4].eq(~self._state[4]),
+                            self.O[5].eq(~self._state[5]),
+                            self.O[6].eq(self._state[6]),
+                            self.O[7].eq(~self._state[7]),
                         ]
 
                     with m.Case(8):
                         m.d.comb += [
-                            self.O[0].eq(~self._net_2674),
-                            self.O[1].eq(self._net_2949),
-                            self.O[2].eq(self._net_2689),
-                            self.O[3].eq(~self._net_2609),
-                            self.O[4].eq(~self._net_2752),
-                            self.O[5].eq(~self._net_2826),
-                            self.O[6].eq(~self._net_2676),
-                            self.O[7].eq(self._net_2743),
+                            self.O[0].eq(~self._state[0]),
+                            self.O[1].eq(self._state[1]),
+                            self.O[2].eq(self._state[2]),
+                            self.O[3].eq(~self._state[3]),
+                            self.O[4].eq(~self._state[4]),
+                            self.O[5].eq(~self._state[5]),
+                            self.O[6].eq(~self._state[6]),
+                            self.O[7].eq(self._state[7]),
                         ]
 
                     with m.Case(9):
                         m.d.comb += [
-                            self.O[0].eq(~self._net_2674),
-                            self.O[1].eq(~self._net_2949),
-                            self.O[2].eq(self._net_2689),
-                            self.O[3].eq(self._net_2609),
-                            self.O[4].eq(self._net_2752),
-                            self.O[5].eq(~self._net_2826),
-                            self.O[6].eq(~self._net_2676),
-                            self.O[7].eq(self._net_2743),
+                            self.O[0].eq(~self._state[0]),
+                            self.O[1].eq(~self._state[1]),
+                            self.O[2].eq(self._state[2]),
+                            self.O[3].eq(self._state[3]),
+                            self.O[4].eq(self._state[4]),
+                            self.O[5].eq(~self._state[5]),
+                            self.O[6].eq(~self._state[6]),
+                            self.O[7].eq(self._state[7]),
                         ]
 
                     with m.Case(10):
                         m.d.comb += [
-                            self.O[0].eq(~self._net_2674),
-                            self.O[1].eq(~self._net_2949),
-                            self.O[2].eq(~self._net_2689),
-                            self.O[3].eq(self._net_2609),
-                            self.O[4].eq(self._net_2752),
-                            self.O[5].eq(self._net_2826),
-                            self.O[6].eq(~self._net_2676),
-                            self.O[7].eq(~self._net_2743),
+                            self.O[0].eq(~self._state[0]),
+                            self.O[1].eq(~self._state[1]),
+                            self.O[2].eq(~self._state[2]),
+                            self.O[3].eq(self._state[3]),
+                            self.O[4].eq(self._state[4]),
+                            self.O[5].eq(self._state[5]),
+                            self.O[6].eq(~self._state[6]),
+                            self.O[7].eq(~self._state[7]),
                         ]
 
                     with m.Case(11):
                         m.d.comb += [
-                            self.O[0].eq(self._net_2674),
-                            self.O[1].eq(self._net_2949),
-                            self.O[2].eq(self._net_2689),
-                            self.O[3].eq(~self._net_2609),
-                            self.O[4].eq(self._net_2752),
-                            self.O[5].eq(~self._net_2826),
-                            self.O[6].eq(~self._net_2676),
-                            self.O[7].eq(self._net_2743),
+                            self.O[0].eq(self._state[0]),
+                            self.O[1].eq(self._state[1]),
+                            self.O[2].eq(self._state[2]),
+                            self.O[3].eq(~self._state[3]),
+                            self.O[4].eq(self._state[4]),
+                            self.O[5].eq(~self._state[5]),
+                            self.O[6].eq(~self._state[6]),
+                            self.O[7].eq(self._state[7]),
                         ]
 
                     with m.Case(12):
                         m.d.comb += [
-                            self.O[0].eq(~self._net_2674),
-                            self.O[1].eq(~self._net_2949),
-                            self.O[2].eq(self._net_2689),
-                            self.O[3].eq(self._net_2609),
-                            self.O[4].eq(~self._net_2752),
-                            self.O[5].eq(self._net_2826),
-                            self.O[6].eq(self._net_2676),
-                            self.O[7].eq(~self._net_2743),
+                            self.O[0].eq(~self._state[0]),
+                            self.O[1].eq(~self._state[1]),
+                            self.O[2].eq(self._state[2]),
+                            self.O[3].eq(self._state[3]),
+                            self.O[4].eq(~self._state[4]),
+                            self.O[5].eq(self._state[5]),
+                            self.O[6].eq(self._state[6]),
+                            self.O[7].eq(~self._state[7]),
                         ]
 
                     with m.Case(13):
                         m.d.comb += [
-                            self.O[0].eq(~self._net_2674),
-                            self.O[1].eq(self._net_2949),
-                            self.O[2].eq(~self._net_2689),
-                            self.O[3].eq(self._net_2609),
-                            self.O[4].eq(~self._net_2752),
-                            self.O[5].eq(~self._net_2826),
-                            self.O[6].eq(~self._net_2676),
-                            self.O[7].eq(~self._net_2743),
+                            self.O[0].eq(~self._state[0]),
+                            self.O[1].eq(self._state[1]),
+                            self.O[2].eq(~self._state[2]),
+                            self.O[3].eq(self._state[3]),
+                            self.O[4].eq(~self._state[4]),
+                            self.O[5].eq(~self._state[5]),
+                            self.O[6].eq(~self._state[6]),
+                            self.O[7].eq(~self._state[7]),
                         ]
 
                     with m.Case(14):
                         m.d.comb += [
-                            self.O[0].eq(~self._net_2674),
-                            self.O[1].eq(~self._net_2949),
-                            self.O[2].eq(~self._net_2689),
-                            self.O[3].eq(~self._net_2609),
-                            self.O[4].eq(self._net_2752),
-                            self.O[5].eq(self._net_2826),
-                            self.O[6].eq(self._net_2676),
-                            self.O[7].eq(~self._net_2743),
+                            self.O[0].eq(~self._state[0]),
+                            self.O[1].eq(~self._state[1]),
+                            self.O[2].eq(~self._state[2]),
+                            self.O[3].eq(~self._state[3]),
+                            self.O[4].eq(self._state[4]),
+                            self.O[5].eq(self._state[5]),
+                            self.O[6].eq(self._state[6]),
+                            self.O[7].eq(~self._state[7]),
                         ]
 
                     with m.Case(15):
                         m.d.comb += [
-                            self.O[0].eq(self._net_2674),
-                            self.O[1].eq(self._net_2949),
-                            self.O[2].eq(self._net_2689),
-                            self.O[3].eq(self._net_2609),
-                            self.O[4].eq(self._net_2752),
-                            self.O[5].eq(self._net_2826),
-                            self.O[6].eq(self._net_2676),
-                            self.O[7].eq(self._net_2743),
+                            self.O[0].eq(self._state[0]),
+                            self.O[1].eq(self._state[1]),
+                            self.O[2].eq(self._state[2]),
+                            self.O[3].eq(self._state[3]),
+                            self.O[4].eq(self._state[4]),
+                            self.O[5].eq(self._state[5]),
+                            self.O[6].eq(self._state[6]),
+                            self.O[7].eq(self._state[7]),
                         ]
 
-            with m.Case(3):
-                m.d.comb += [
-                    self.O[0].eq(self.net_1816),
-                    self.O[1].eq(self.net_1822),
-                    self.O[2].eq(self.net_1907),
-                    self.O[3].eq(self.net_1936),
-                    self.O[4].eq(self.net_1927),
-                    self.O[5].eq(self.net_1905),
-                    self.O[6].eq(self.net_1928),
-                    self.O[7].eq(self.net_1815),
-                ]
+            with m.Case(MessageSelect.TRY_AGAIN):
+                m.d.comb += self.O.eq(self.I_try_again)
 
-            with m.Case(4):
-                m.d.comb += [
-                    self.O[0].eq(self.net_1559),
-                    self.O[1].eq(self.net_1420),
-                    self.O[2].eq(self.net_1694),
-                    self.O[3].eq(self.net_1516),
-                    self.O[4].eq(self.net_1472),
-                    self.O[5].eq(self.net_1693),
-                    self.O[6].eq(self.net_1629),
-                    self.O[7].eq(self.net_1425),
-                ]
+            with m.Case(MessageSelect.TWO_NOT_TOUCH):
+                m.d.comb += self.O.eq(self.I_two_not_touch)
 
-            with m.Case(5):
-                m.d.comb += [
-                    self.O[0].eq(self.net_1816),
-                    self.O[1].eq(self.net_1822),
-                    self.O[2].eq(self.net_1907),
-                    self.O[3].eq(self.net_1936),
-                    self.O[4].eq(self.net_1927),
-                    self.O[5].eq(self.net_1905),
-                    self.O[6].eq(self.net_1928),
-                    self.O[7].eq(self.net_1815),
-                ]
-
-            with m.Case(6):
-                m.d.comb += [
-                    self.O[0].eq(self.net_1816),
-                    self.O[1].eq(self.net_1822),
-                    self.O[2].eq(self.net_1907),
-                    self.O[3].eq(self.net_1936),
-                    self.O[4].eq(self.net_1927),
-                    self.O[5].eq(self.net_1905),
-                    self.O[6].eq(self.net_1928),
-                    self.O[7].eq(self.net_1815),
-                ]
-
-            with m.Case(7):
-                m.d.comb += [
-                    self.O[0].eq(self.net_1816),
-                    self.O[1].eq(self.net_1822),
-                    self.O[2].eq(self.net_1907),
-                    self.O[3].eq(self.net_1936),
-                    self.O[4].eq(self.net_1927),
-                    self.O[5].eq(self.net_1905),
-                    self.O[6].eq(self.net_1928),
-                    self.O[7].eq(self.net_1815),
-                ]
+            with m.Default():
+                m.d.comb += self.O.eq(self.I_try_again)
 
         return m
 
-class Output_LakeAcuity(wiring.Component):
-    net_1351: In(1)
-    net_1505: In(1)
-    net_1365: In(1)
-    net_1363: In(1)
-    net_2232: Out(1)
-    net_2006: Out(1)
-    net_2313: Out(1)
-    net_1977: Out(1)
-    net_2315: Out(1)
-    net_2088: Out(1)
-    net_2298: Out(1)
-    net_2120: Out(1)
-    net_2460: Out(1)
-    net_2117: Out(1)
-    net_2240: Out(1)
-    net_2189: Out(1)
-    net_2461: Out(1)
-    net_2154: Out(1)
-    net_2479: Out(1)
-    net_2004: Out(1)
+class OutputStringGenerator(wiring.Component):
+    char_index: In(4)
+    O: Out(8)
 
-    def __init__(self):
-        self._net_2303 = Signal(1)
-        self._net_2224 = Signal(1)
-        self._net_1992 = Signal(1)
-        self._net_1973 = Signal(1)
+    def __init__(self, string: str):
+        self._string = string
 
         super().__init__()
 
     def elaborate(self, platform):
         m = Module()
 
-        m.d.comb += [
-            self._net_2303.eq(~(self.net_1365) & (self.net_1363)),
-            self._net_2224.eq(~(self.net_1505)),
-            self._net_1992.eq((self.net_1365) | (self.net_1505)),
-            self._net_1973.eq(~(self.net_1363) & (self.net_1351)),
-        ]
-
-        m.d.sync += [
-        ]
+        m.submodules.rom = Memory(width=8, depth=16, init=self._string.encode())
+        rd_port = m.submodules.rom.read_port(domain="comb")
 
         m.d.comb += [
-            self.net_2232.eq(((((self.net_1351) & (self.net_1363) & (self.net_1365)) | (~(self.net_1363) & (self.net_1351)) | (~((self.net_1351) | (self.net_1365) | ~(self.net_1363)))) & (self._net_2224))),
-            self.net_2006.eq(~(((self._net_1992) & (self._net_1973)) | (Mux((self.net_1365), (self.net_1505), (self.net_1363))))),
-            self.net_2313.eq((((~(self.net_1351)) | (self.net_1365)) & (self._net_2224) & (self.net_1363))),
-            self.net_1977.eq(~(self._net_1992) & (~(~(self.net_1351) & (self.net_1363)))),
-            self.net_2315.eq((((~(self.net_1351)) | ((self.net_1351) & (self.net_1363) & (self.net_1365))) & (self._net_2224))),
-            self.net_2088.eq(~(self.net_1505) & (self.net_1365) & (self.net_1363)),
-            self.net_2298.eq((self.net_1351) & (self._net_2224) & (self._net_2303)),
-            self.net_2120.eq(~(self.net_1505) & (self._net_1973) & (self.net_1365)),
-            self.net_2460.eq(~(((self.net_1351) & (self.net_1365)) | (self.net_1505) | (self._net_2303) | (~((self.net_1351) | (self.net_1363))))),
-            self.net_2117.eq((((self._net_1992) | (self._net_1973)) & ((~((self.net_1505) | (self._net_1973))) | (~(((self.net_1351) & (self.net_1505)) | (self.net_1365)))) & (~(~(self.net_1351) & (self.net_1363))))),
-            self.net_2240.eq(0),
-            self.net_2189.eq((((self.net_1363) | (self._net_1992)) & (~((self.net_1351) & (self._net_1992))) & (~(((self.net_1363) | (self.net_1365)) & (self.net_1505))))),
-            self.net_2461.eq(~(((self.net_1351) & (self._net_2303)) | (self.net_1505))),
-            self.net_2154.eq((((self.net_1363) | (~((self.net_1351) & (self._net_1992)))) & (~(((self.net_1363) | (self.net_1365)) & (self.net_1505))))),
-            self.net_2479.eq(0),
-            self.net_2004.eq(0),
-        ]
-
-        return m
-
-class Output_LakeVerity(wiring.Component):
-    net_1363: In(1)
-    net_1365: In(1)
-    net_1351: In(1)
-    net_1505: In(1)
-    net_1927: Out(1)
-    net_1816: Out(1)
-    net_1936: Out(1)
-    net_1905: Out(1)
-    net_1815: Out(1)
-    net_1928: Out(1)
-    net_1907: Out(1)
-    net_1822: Out(1)
-
-    def __init__(self):
-        self._net_1827 = Signal(1)
-        self._net_1880 = Signal(1)
-
-        super().__init__()
-
-    def elaborate(self, platform):
-        m = Module()
-
-        m.d.comb += [
-            self._net_1827.eq(~((self.net_1351) | (self.net_1363) | (self.net_1365) | ~(self.net_1505))),
-            self._net_1880.eq(~(self.net_1505) & (self.net_1365) & (self.net_1363) & (self.net_1351)),
-        ]
-
-        m.d.sync += [
-        ]
-
-        m.d.comb += [
-            self.net_1927.eq(~(((self.net_1351) & (self.net_1363)) | (self.net_1365) | (self.net_1505))),
-            self.net_1816.eq((((self.net_1363) | (self.net_1365)) & ((~(((self.net_1351) & (self.net_1363)) | (self.net_1505))) | (self._net_1880)))),
-            self.net_1936.eq((((self.net_1363) & (~(((self.net_1351) & (self.net_1363)) | (self.net_1365) | (self.net_1505)))) | (self._net_1827) | (self._net_1880))),
-            self.net_1905.eq(~(self.net_1365) & ~(self.net_1505) & (self.net_1351) & (self.net_1363)),
-            self.net_1815.eq(0),
-            self.net_1928.eq((~(((self.net_1351) & (self.net_1363)) | (self.net_1505))) | (self._net_1880) | (self._net_1827)),
-            self.net_1907.eq((((self.net_1351) & (self.net_1365) & (~((self.net_1363) | (self.net_1505)))) | (~((self.net_1351) | (self.net_1363) | (self.net_1365))))),
-            self.net_1822.eq((((self.net_1351) & (~((self.net_1363) | (self.net_1505)))) | (self._net_1827))),
-        ]
-
-        return m
-
-class Output_LakeValor(wiring.Component):
-    net_1365: In(1)
-    net_1351: In(1)
-    net_1505: In(1)
-    net_1363: In(1)
-    net_1447: In(1)
-    net_1425: Out(1)
-    net_1693: Out(1)
-    net_1694: Out(1)
-    net_1516: Out(1)
-    net_1420: Out(1)
-    net_1559: Out(1)
-    net_1629: Out(1)
-    net_1472: Out(1)
-
-    def __init__(self):
-        self._net_1598 = Signal(1)
-        self._net_1469 = Signal(1)
-        self._net_1445 = Signal(1)
-        self._net_1448 = Signal(1)
-        self._net_1443 = Signal(1)
-
-        super().__init__()
-
-    def elaborate(self, platform):
-        m = Module()
-
-        m.d.comb += [
-            self._net_1598.eq(~((self.net_1351) & (self.net_1363))),
-            self._net_1469.eq(~((self.net_1351) | (self.net_1363))),
-            self._net_1445.eq(~(((self.net_1351) & (self.net_1363)) | (self.net_1505))),
-            self._net_1448.eq(~(~(self.net_1365) & (self.net_1505))),
-            self._net_1443.eq(~(~(self.net_1351) & (self.net_1365))),
-        ]
-
-        m.d.sync += [
-        ]
-
-        m.d.comb += [
-            self.net_1425.eq(0),
-            self.net_1693.eq(~((self.net_1505) | (self._net_1598))),
-            self.net_1694.eq((self._net_1598) & (~((self.net_1365) & (self.net_1505)))),
-            self.net_1516.eq(~((~(self._net_1469) & (self._net_1443) & (self._net_1445)) ^ ((((self._net_1443) & (~(~(self.net_1365) & (self.net_1351)))) | (self.net_1363))))),
-            self.net_1420.eq((((~(self.net_1363) & (self.net_1365)) | (~(((self.net_1447) & (self._net_1448) & (~(~(self.net_1505) & (self.net_1365)))) | (self._net_1445))) | (~((self.net_1365) | (self._net_1469) | ((self.net_1351) & (self.net_1363))))) & ((((self.net_1447) & (self._net_1448) & (~(~(self.net_1505) & (self.net_1365)))) | (~(self.net_1365) & (self.net_1351)) | (self._net_1445))))),
-            self.net_1559.eq(~(((self._net_1469) | (self._net_1448)) & ~(~(self._net_1469) & (self._net_1443) & (self._net_1445)))),
-            self.net_1629.eq((((self.net_1505) | (self._net_1598)) & ((~((self.net_1365) & (self.net_1505))) | (self._net_1469)))),
-            self.net_1472.eq(~(((~(self.net_1363) & (self.net_1365)) | (~(((self.net_1447) & (self._net_1448) & (~(~(self.net_1505) & (self.net_1365)))) | (self._net_1445))) | ((self.net_1363) & (self._net_1443))) & ((self._net_1448) | (self.net_1351)))),
+            rd_port.addr.eq(self.char_index),
+            self.O.eq(rd_port.data),
         ]
 
         return m
@@ -887,7 +636,6 @@ class Regions(wiring.Component):
 class puzzle(wiring.Component):
     I: In(1)
     enable: In(1)
-    net_1447: In(1)
     O: Out(8)
     success: Out(1)
 
@@ -1006,10 +754,11 @@ class puzzle(wiring.Component):
         m.submodules.region_checker = ColumnChecker()
         m.submodules.success_controller = SuccessController()
         m.submodules.output_controller = OutputController()
-        m.submodules.output_eternaforest = Output_EternaForest()
-        m.submodules.output_lakeacuity = Output_LakeAcuity()
-        m.submodules.output_lakeverity = Output_LakeVerity()
-        m.submodules.output_lakevalor = Output_LakeValor()
+        m.submodules.output_flag_obfuscator = OutputFlagObfuscator()
+        m.submodules.output_string_big_bang = OutputStringGenerator("BIG BANG")
+        m.submodules.output_string_empty_sky = OutputStringGenerator("EMPTY SKY")
+        m.submodules.output_string_try_again = OutputStringGenerator("TRY AGAIN")
+        m.submodules.output_string_two_not_touch = OutputStringGenerator("TWO NOT TOUCH")
         m.submodules.regions = Regions()
 
         m.d.comb += [
@@ -1049,57 +798,20 @@ class puzzle(wiring.Component):
             m.submodules.output_controller.egg_full.eq(m.submodules.popcnt_checker.full),
             m.submodules.output_controller.egg_empty.eq(m.submodules.popcnt_checker.empty),
             m.submodules.output_controller.success.eq(m.submodules.success_controller.success),
-            m.submodules.output_controller.I.eq(m.submodules.output_eternaforest.O),
-            m.submodules.output_eternaforest.enable.eq(m.submodules.done_controller.enable_gated),
-            m.submodules.output_eternaforest.I.eq(self.I),
-            m.submodules.output_eternaforest.output_enable.eq(m.submodules.output_controller.output_enable),
-            m.submodules.output_eternaforest.char_index.eq(m.submodules.output_controller.char_index),
-            m.submodules.output_eternaforest.message_select.eq(m.submodules.output_controller.message_select),
-            m.submodules.output_eternaforest.net_2232.eq(m.submodules.output_lakeacuity.net_2232),
-            m.submodules.output_eternaforest.net_2006.eq(m.submodules.output_lakeacuity.net_2006),
-            m.submodules.output_eternaforest.net_1425.eq(m.submodules.output_lakevalor.net_1425),
-            m.submodules.output_eternaforest.net_1693.eq(m.submodules.output_lakevalor.net_1693),
-            m.submodules.output_eternaforest.net_1694.eq(m.submodules.output_lakevalor.net_1694),
-            m.submodules.output_eternaforest.net_1516.eq(m.submodules.output_lakevalor.net_1516),
-            m.submodules.output_eternaforest.net_2313.eq(m.submodules.output_lakeacuity.net_2313),
-            m.submodules.output_eternaforest.net_1977.eq(m.submodules.output_lakeacuity.net_1977),
-            m.submodules.output_eternaforest.net_1927.eq(m.submodules.output_lakeverity.net_1927),
-            m.submodules.output_eternaforest.net_2315.eq(m.submodules.output_lakeacuity.net_2315),
-            m.submodules.output_eternaforest.net_2088.eq(m.submodules.output_lakeacuity.net_2088),
-            m.submodules.output_eternaforest.net_2298.eq(m.submodules.output_lakeacuity.net_2298),
-            m.submodules.output_eternaforest.net_2120.eq(m.submodules.output_lakeacuity.net_2120),
-            m.submodules.output_eternaforest.net_2460.eq(m.submodules.output_lakeacuity.net_2460),
-            m.submodules.output_eternaforest.net_2117.eq(m.submodules.output_lakeacuity.net_2117),
-            m.submodules.output_eternaforest.net_2240.eq(m.submodules.output_lakeacuity.net_2240),
-            m.submodules.output_eternaforest.net_2189.eq(m.submodules.output_lakeacuity.net_2189),
-            m.submodules.output_eternaforest.net_1420.eq(m.submodules.output_lakevalor.net_1420),
-            m.submodules.output_eternaforest.net_1559.eq(m.submodules.output_lakevalor.net_1559),
-            m.submodules.output_eternaforest.net_1816.eq(m.submodules.output_lakeverity.net_1816),
-            m.submodules.output_eternaforest.net_1936.eq(m.submodules.output_lakeverity.net_1936),
-            m.submodules.output_eternaforest.net_1629.eq(m.submodules.output_lakevalor.net_1629),
-            m.submodules.output_eternaforest.net_1472.eq(m.submodules.output_lakevalor.net_1472),
-            m.submodules.output_eternaforest.net_2461.eq(m.submodules.output_lakeacuity.net_2461),
-            m.submodules.output_eternaforest.net_2154.eq(m.submodules.output_lakeacuity.net_2154),
-            m.submodules.output_eternaforest.net_1905.eq(m.submodules.output_lakeverity.net_1905),
-            m.submodules.output_eternaforest.net_1815.eq(m.submodules.output_lakeverity.net_1815),
-            m.submodules.output_eternaforest.net_1928.eq(m.submodules.output_lakeverity.net_1928),
-            m.submodules.output_eternaforest.net_2479.eq(m.submodules.output_lakeacuity.net_2479),
-            m.submodules.output_eternaforest.net_2004.eq(m.submodules.output_lakeacuity.net_2004),
-            m.submodules.output_eternaforest.net_1907.eq(m.submodules.output_lakeverity.net_1907),
-            m.submodules.output_eternaforest.net_1822.eq(m.submodules.output_lakeverity.net_1822),
-            m.submodules.output_lakeacuity.net_1351.eq(m.submodules.output_controller.char_index[0]),
-            m.submodules.output_lakeacuity.net_1505.eq(m.submodules.output_controller.char_index[3]),
-            m.submodules.output_lakeacuity.net_1365.eq(m.submodules.output_controller.char_index[2]),
-            m.submodules.output_lakeacuity.net_1363.eq(m.submodules.output_controller.char_index[1]),
-            m.submodules.output_lakeverity.net_1363.eq(m.submodules.output_controller.char_index[1]),
-            m.submodules.output_lakeverity.net_1365.eq(m.submodules.output_controller.char_index[2]),
-            m.submodules.output_lakeverity.net_1351.eq(m.submodules.output_controller.char_index[0]),
-            m.submodules.output_lakeverity.net_1505.eq(m.submodules.output_controller.char_index[3]),
-            m.submodules.output_lakevalor.net_1365.eq(m.submodules.output_controller.char_index[2]),
-            m.submodules.output_lakevalor.net_1351.eq(m.submodules.output_controller.char_index[0]),
-            m.submodules.output_lakevalor.net_1505.eq(m.submodules.output_controller.char_index[3]),
-            m.submodules.output_lakevalor.net_1363.eq(m.submodules.output_controller.char_index[1]),
-            m.submodules.output_lakevalor.net_1447.eq(self.net_1447),
+            m.submodules.output_controller.I.eq(m.submodules.output_flag_obfuscator.O),
+            m.submodules.output_flag_obfuscator.enable.eq(m.submodules.done_controller.enable_gated),
+            m.submodules.output_flag_obfuscator.I.eq(self.I),
+            m.submodules.output_flag_obfuscator.output_enable.eq(m.submodules.output_controller.output_enable),
+            m.submodules.output_flag_obfuscator.char_index.eq(m.submodules.output_controller.char_index),
+            m.submodules.output_flag_obfuscator.message_select.eq(m.submodules.output_controller.message_select),
+            m.submodules.output_flag_obfuscator.I_big_bang.eq(m.submodules.output_string_big_bang.O),
+            m.submodules.output_flag_obfuscator.I_empty_sky.eq(m.submodules.output_string_empty_sky.O),
+            m.submodules.output_flag_obfuscator.I_try_again.eq(m.submodules.output_string_try_again.O),
+            m.submodules.output_flag_obfuscator.I_two_not_touch.eq(m.submodules.output_string_two_not_touch.O),
+            m.submodules.output_string_big_bang.char_index.eq(m.submodules.output_controller.char_index),
+            m.submodules.output_string_empty_sky.char_index.eq(m.submodules.output_controller.char_index),
+            m.submodules.output_string_try_again.char_index.eq(m.submodules.output_controller.char_index),
+            m.submodules.output_string_two_not_touch.char_index.eq(m.submodules.output_controller.char_index),
             m.submodules.regions.x.eq(m.submodules.x_counter.count),
             m.submodules.regions.y.eq(m.submodules.y_counter.count),
         ]
@@ -1166,46 +878,46 @@ class puzzle(wiring.Component):
             self.net_3384.eq(m.submodules.output_controller.message_select[1]),
             self.net_1505.eq(m.submodules.output_controller.char_index[3]),
             self.net_1363.eq(m.submodules.output_controller.char_index[1]),
-            self.net_3617.eq(m.submodules.output_eternaforest.O[0]),
-            self.net_3516.eq(m.submodules.output_eternaforest.O[2]),
-            self.net_3435.eq(m.submodules.output_eternaforest.O[7]),
-            self.net_3543.eq(m.submodules.output_eternaforest.O[5]),
-            self.net_3552.eq(m.submodules.output_eternaforest.O[4]),
-            self.net_3613.eq(m.submodules.output_eternaforest.O[3]),
-            self.net_3518.eq(m.submodules.output_eternaforest.O[6]),
-            self.net_3818.eq(m.submodules.output_eternaforest.O[1]),
-            self.net_2232.eq(m.submodules.output_lakeacuity.net_2232),
-            self.net_2006.eq(m.submodules.output_lakeacuity.net_2006),
-            self.net_2313.eq(m.submodules.output_lakeacuity.net_2313),
-            self.net_1977.eq(m.submodules.output_lakeacuity.net_1977),
-            self.net_2315.eq(m.submodules.output_lakeacuity.net_2315),
-            self.net_2088.eq(m.submodules.output_lakeacuity.net_2088),
-            self.net_2298.eq(m.submodules.output_lakeacuity.net_2298),
-            self.net_2120.eq(m.submodules.output_lakeacuity.net_2120),
-            self.net_2460.eq(m.submodules.output_lakeacuity.net_2460),
-            self.net_2117.eq(m.submodules.output_lakeacuity.net_2117),
-            self.net_2240.eq(m.submodules.output_lakeacuity.net_2240),
-            self.net_2189.eq(m.submodules.output_lakeacuity.net_2189),
-            self.net_2461.eq(m.submodules.output_lakeacuity.net_2461),
-            self.net_2154.eq(m.submodules.output_lakeacuity.net_2154),
-            self.net_2479.eq(m.submodules.output_lakeacuity.net_2479),
-            self.net_2004.eq(m.submodules.output_lakeacuity.net_2004),
-            self.net_1927.eq(m.submodules.output_lakeverity.net_1927),
-            self.net_1816.eq(m.submodules.output_lakeverity.net_1816),
-            self.net_1936.eq(m.submodules.output_lakeverity.net_1936),
-            self.net_1905.eq(m.submodules.output_lakeverity.net_1905),
-            self.net_1815.eq(m.submodules.output_lakeverity.net_1815),
-            self.net_1928.eq(m.submodules.output_lakeverity.net_1928),
-            self.net_1907.eq(m.submodules.output_lakeverity.net_1907),
-            self.net_1822.eq(m.submodules.output_lakeverity.net_1822),
-            self.net_1425.eq(m.submodules.output_lakevalor.net_1425),
-            self.net_1693.eq(m.submodules.output_lakevalor.net_1693),
-            self.net_1694.eq(m.submodules.output_lakevalor.net_1694),
-            self.net_1516.eq(m.submodules.output_lakevalor.net_1516),
-            self.net_1420.eq(m.submodules.output_lakevalor.net_1420),
-            self.net_1559.eq(m.submodules.output_lakevalor.net_1559),
-            self.net_1629.eq(m.submodules.output_lakevalor.net_1629),
-            self.net_1472.eq(m.submodules.output_lakevalor.net_1472),
+            self.net_3617.eq(m.submodules.output_flag_obfuscator.O[0]),
+            self.net_3516.eq(m.submodules.output_flag_obfuscator.O[2]),
+            self.net_3435.eq(m.submodules.output_flag_obfuscator.O[7]),
+            self.net_3543.eq(m.submodules.output_flag_obfuscator.O[5]),
+            self.net_3552.eq(m.submodules.output_flag_obfuscator.O[4]),
+            self.net_3613.eq(m.submodules.output_flag_obfuscator.O[3]),
+            self.net_3518.eq(m.submodules.output_flag_obfuscator.O[6]),
+            self.net_3818.eq(m.submodules.output_flag_obfuscator.O[1]),
+            self.net_2232.eq(m.submodules.output_string_big_bang.O[0]),
+            self.net_2006.eq(m.submodules.output_string_empty_sky.O[0]),
+            self.net_2313.eq(m.submodules.output_string_big_bang.O[2]),
+            self.net_1977.eq(m.submodules.output_string_empty_sky.O[2]),
+            self.net_2315.eq(m.submodules.output_string_big_bang.O[1]),
+            self.net_2088.eq(m.submodules.output_string_empty_sky.O[1]),
+            self.net_2298.eq(m.submodules.output_string_big_bang.O[5]),
+            self.net_2120.eq(m.submodules.output_string_empty_sky.O[5]),
+            self.net_2460.eq(m.submodules.output_string_big_bang.O[3]),
+            self.net_2117.eq(m.submodules.output_string_empty_sky.O[3]),
+            self.net_2240.eq(m.submodules.output_string_big_bang.O[4]),
+            self.net_2189.eq(m.submodules.output_string_empty_sky.O[4]),
+            self.net_2461.eq(m.submodules.output_string_big_bang.O[6]),
+            self.net_2154.eq(m.submodules.output_string_empty_sky.O[6]),
+            self.net_2479.eq(m.submodules.output_string_big_bang.O[7]),
+            self.net_2004.eq(m.submodules.output_string_empty_sky.O[7]),
+            self.net_1927.eq(m.submodules.output_string_try_again.O[4]),
+            self.net_1816.eq(m.submodules.output_string_try_again.O[0]),
+            self.net_1936.eq(m.submodules.output_string_try_again.O[3]),
+            self.net_1905.eq(m.submodules.output_string_try_again.O[5]),
+            self.net_1815.eq(m.submodules.output_string_try_again.O[7]),
+            self.net_1928.eq(m.submodules.output_string_try_again.O[6]),
+            self.net_1907.eq(m.submodules.output_string_try_again.O[2]),
+            self.net_1822.eq(m.submodules.output_string_try_again.O[1]),
+            self.net_1425.eq(m.submodules.output_string_two_not_touch.O[7]),
+            self.net_1693.eq(m.submodules.output_string_two_not_touch.O[5]),
+            self.net_1694.eq(m.submodules.output_string_two_not_touch.O[2]),
+            self.net_1516.eq(m.submodules.output_string_two_not_touch.O[3]),
+            self.net_1420.eq(m.submodules.output_string_two_not_touch.O[1]),
+            self.net_1559.eq(m.submodules.output_string_two_not_touch.O[0]),
+            self.net_1629.eq(m.submodules.output_string_two_not_touch.O[6]),
+            self.net_1472.eq(m.submodules.output_string_two_not_touch.O[4]),
             self.net_736.eq(m.submodules.regions.out[0]),
             self.net_1034.eq(m.submodules.regions.out[3]),
             self.net_857.eq(m.submodules.regions.out[1]),
@@ -1221,7 +933,6 @@ if __name__ == "__main__":
         f.write(verilog.convert(top, name="puzzle_solution", ports=[
             top.I,
             top.enable,
-            top.net_1447,
             top.net_934,
             top.net_3136,
             top.net_1526,
