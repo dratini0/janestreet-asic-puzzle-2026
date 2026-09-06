@@ -221,3 +221,14 @@ If you read both of those test vectors, row-by-row, as LSB-first ASCII codes, yo
 ### Open questions
 
 I don't quite undestand what that module with 8 bits state does in the middle of the output generator, but it seems to obfuscate the answer based on the input.
+
+# Post-solution work
+
+## Reverse-engineering the output-generator
+
+PyEDA with its logic minimization and equivalence checking made short work of `EternaForest`, the 8-bit state module that holds the flag.
+It seems it takes a CRC of the input, and uses that state to generate a "keystream" to XOR with the flag.
+Since it only has 8 bits of state, it's possible to just try every initial state, and seeing if it generates all-ASCII output (O[7] = 0).
+This only results in one match, which is expected because there is 15 more-or-less independent checks that each have 50% checks of succeeding, so each possible input has a 1/(1<<15) probabilty of being a false positive, and we are only testing 256 states.
+
+It may have even been possible to force the success output high, and try random inputs until an all-ASCII output comes out.
