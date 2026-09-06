@@ -14,3 +14,7 @@ This is a limitation of GitHub.
 
 I have not used any AI tools to author this code, which I regret in retrospect.
 The [fork of PyEDA](https://github.com/Speedata-io/pyeda) I have been using seems to be mostly maintained with Claude, however.
+
+## Post-submission work
+
+Since I apparently just can't put this puzzle down, I have done some more work on the `post-submission` branch.
